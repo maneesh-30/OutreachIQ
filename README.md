@@ -5,7 +5,7 @@ An AI sales team that researches your company, finds matching prospects, and wri
 Multi-agent system built on **Microsoft Azure AI Foundry** (Responses API + knowledge base), with model routing across **Azure** (gpt-4.1-mini, judgment/writing) and **Featherless** (Qwen2.5-7B-Instruct, bulk fetch/extract) to cut cost without losing quality.
 
 ## Status
-Phase 2 — agent pipeline runs end-to-end on one lead (terminal).
+Phase 3 — discovery: finds + ranks fitting prospects from a seed pool, then runs the pipeline on the top N (terminal).
 
 ## Setup
 ```bash
@@ -20,7 +20,9 @@ python backend/test_models.py  # smoke test: Azure + Featherless respond
 ```bash
 python backend/kb_build.py build            # build Foundry knowledge base from data/company/*.md
 python backend/kb_build.py ask "question"    # grounded query + citations
-python backend/orchestrator.py               # full agent pipeline on one prospect + cost split
+python backend/prospector.py 8               # discover + rank top 8 prospects from the pool
+python backend/orchestrator.py 3             # discover top 3 + run full pipeline on each
+python backend/orchestrator.py single        # run pipeline on the fallback hardcoded prospect
 ```
 
 ## Architecture (high level)
