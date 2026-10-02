@@ -26,3 +26,6 @@ Thumbs.db
 *.sqlite
 *.db
 *.log
+
+# kb runtime state
+backend/.kb_state.json
