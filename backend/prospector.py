@@ -73,7 +73,8 @@ def _score_companies(companies: list[dict], icp: str, ledger: Ledger) -> list[di
     return scored
 
 
-def discover(top_n: int = 3, ledger: Ledger | None = None, source: str = "pool"):
+def discover(top_n: int = 3, ledger: Ledger | None = None, source: str = "pool",
+             scope: str = "both"):
     """Returns (ranked, source_used). source_used is 'pool', 'live', or 'live→pool'
     when a live search was requested but yielded nothing and the pool was used."""
     ledger = ledger or Ledger()
@@ -83,7 +84,11 @@ def discover(top_n: int = 3, ledger: Ledger | None = None, source: str = "pool")
     used = source
     if source == "live":
         from live_search import live_companies
-        companies = live_companies(icp, ledger, want=max(top_n * 3, 8))
+        import company as companydb
+        prof = companydb.load_company() or {}
+        companies = live_companies(
+            icp, ledger, want=max(top_n * 3, 8), scope=scope,
+            country=prof.get("country", ""), country_code=prof.get("country_code", ""))
         if not companies:
             used = "live→pool"
     if not companies:
