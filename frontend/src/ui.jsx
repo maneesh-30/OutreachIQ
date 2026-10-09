@@ -2,7 +2,7 @@ import { Check, Loader2 } from 'lucide-react'
 
 export function Card({ className = '', children, ...p }) {
   return (
-    <div className={`bg-surface border border-border rounded-xl ${className}`} {...p}>
+    <div className={`glass rounded-xl ${className}`} {...p}>
       {children}
     </div>
   )
@@ -10,9 +10,9 @@ export function Card({ className = '', children, ...p }) {
 
 export function Button({ variant = 'primary', className = '', children, ...p }) {
   const styles = {
-    primary: 'bg-accent text-white hover:brightness-110',
-    ghost: 'bg-surface2 border border-border text-gray-200 hover:border-gray-500',
-    subtle: 'bg-transparent border border-border text-gray-300 hover:border-gray-500',
+    primary: 'btn-grad font-semibold',
+    ghost: 'bg-white/5 border border-white/10 text-gray-200 hover:bg-white/10',
+    subtle: 'bg-transparent border border-white/10 text-gray-300 hover:bg-white/5',
   }
   return (
     <button
