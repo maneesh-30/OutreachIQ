@@ -21,6 +21,10 @@ import db
 from db import Session, Run, Prospect, Email, Step
 import orchestrator
 from prospector import load_pool
+from router import Ledger
+from analyzer import analyze
+from kb_build import build_from_profile
+import company as companydb
 
 app = FastAPI(title="OutreachIQ API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
@@ -188,3 +192,36 @@ async def stream_run(run_id: int):
 @app.get("/api/pool")
 def get_pool():
     return load_pool()
+
+
+# ---------- company self-analysis (Phase 6) ----------
+
+@app.post("/api/analyze")
+def analyze_site(payload: dict):
+    url = (payload or {}).get("url", "").strip()
+    if not url:
+        raise HTTPException(400, "url required")
+    try:
+        profile = analyze(url, Ledger())
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(502, f"could not analyze site: {e}")
+    try:
+        build_from_profile(profile)           # rebuild KB from the scraped profile
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(500, f"analyzed, but KB rebuild failed: {e}")
+    profile.pop("_site_text", None)
+    companydb.save_company(profile)
+    return profile
+
+
+@app.get("/api/company")
+def get_company():
+    return companydb.load_company() or {}
+
+
+@app.put("/api/company")
+def update_company(payload: dict):
+    cur = companydb.load_company() or {}
+    cur.update(payload or {})
+    companydb.save_company(cur)
+    return cur
