@@ -6,11 +6,11 @@ const J = (r) => {
 export const getPool = () => fetch('/api/pool').then(J)
 export const listRuns = () => fetch('/api/runs').then(J)
 export const getRun = (id) => fetch(`/api/runs/${id}`).then(J)
-export const startRun = (top_n, source = 'pool') =>
+export const startRun = (top_n, source = 'pool', scope = 'both') =>
   fetch('/api/runs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ top_n, source }),
+    body: JSON.stringify({ top_n, source, scope }),
   }).then(J)
 
 export const analyzeSite = (url) =>

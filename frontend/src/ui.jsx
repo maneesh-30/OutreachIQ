@@ -74,6 +74,17 @@ export function SourceBadge({ source }) {
   return <span className={`rounded-full px-2 py-0.5 text-xs ${s.c}`}>{s.t}</span>
 }
 
+export function RegionChip({ region, country }) {
+  if (!region && !country) return null
+  const local = region === 'local'
+  const label = country || (local ? 'Local' : 'International')
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-[10px] ${local ? 'bg-success/10 text-success' : 'bg-accent/10 text-accent'}`}>
+      {label}{region ? ` · ${local ? 'Local' : 'Intl'}` : ''}
+    </span>
+  )
+}
+
 export function Spinner({ size = 16 }) {
   return <Loader2 size={size} className="animate-spin text-accent" />
 }
