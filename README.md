@@ -2,10 +2,10 @@
 
 An AI sales team that researches your company, finds matching prospects, and writes personalized outreach emails from your own docs and case studies.
 
-Multi-agent system built on **Microsoft Azure AI Foundry** (Responses API + knowledge base), with model routing across **Azure** (gpt-4.1-mini, judgment/writing) and **Featherless** (Qwen2.5-7B-Instruct, bulk fetch/extract) to cut cost without losing quality.
+Multi-agent system built on **Microsoft Azure AI Foundry** (Responses API + knowledge base), with model routing across **Azure** (gpt-4.1-mini, judgment/writing) and **Groq** (gpt-oss-20b, bulk fetch/extract) to cut cost without losing quality.
 
 ## Status
-Phase 3 — discovery: finds + ranks fitting prospects from a seed pool, then runs the pipeline on the top N (terminal).
+Phase 4 — FastAPI backend: runs the pipeline as a background job, persists to SQLite, streams live agent progress over SSE.
 
 ## Setup
 ```bash
@@ -24,6 +24,17 @@ python backend/prospector.py 8               # discover + rank top 8 prospects f
 python backend/orchestrator.py 3             # discover top 3 + run full pipeline on each
 python backend/orchestrator.py single        # run pipeline on the fallback hardcoded prospect
 ```
+
+## Backend API
+```bash
+cd backend && uvicorn api:app --reload        # http://127.0.0.1:8000
+```
+- `POST /api/runs` `{"top_n": 3}` — start a discovery+pipeline batch (background), returns `run_id`
+- `GET  /api/runs` — list runs
+- `GET  /api/runs/{id}` — full detail: prospects, fit, emails, citations, cost split
+- `GET  /api/runs/{id}/stream` — SSE live agent events
+- `GET  /api/pool` — the seed prospect pool
+
 
 ## Architecture (high level)
 - **Setup:** paste a company URL -> self-analyzer reads site -> ICP builder drafts profile -> stored in Foundry knowledge base.
