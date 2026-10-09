@@ -46,6 +46,8 @@ class Prospect(Base):
     name: Mapped[str] = mapped_column(String(200))
     domain: Mapped[str] = mapped_column(String(200), default="")
     blurb: Mapped[str] = mapped_column(Text, default="")
+    country: Mapped[str] = mapped_column(String(80), default="")
+    region: Mapped[str] = mapped_column(String(20), default="")  # local | international
     discovery_score: Mapped[int] = mapped_column(Integer, default=0)
     fit_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
     fit_reason: Mapped[str | None] = mapped_column(Text, nullable=True)

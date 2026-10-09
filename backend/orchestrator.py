@@ -56,13 +56,15 @@ def run_pipeline(prospect: dict, ledger: Ledger, emit=_noop, verbose: bool = Tru
     return out
 
 
-def run_batch(top_n: int = 3, emit=_noop, source: str = "pool") -> dict:
+def run_batch(top_n: int = 3, emit=_noop, source: str = "pool", scope: str = "both") -> dict:
     ledger = Ledger()
     emit({"type": "discovery_start", "top_n": top_n})
-    print(f"Discovering top {top_n} prospects (source={source})...")
-    ranked, source_used = discover(top_n=top_n, ledger=ledger, source=source)
+    print(f"Discovering top {top_n} prospects (source={source}, scope={scope})...")
+    ranked, source_used = discover(top_n=top_n, ledger=ledger, source=source, scope=scope)
     emit({"type": "discovered", "source_used": source_used,
           "prospects": [{"name": r["prospect"]["name"], "domain": r["prospect"].get("domain", ""),
+                         "country": r["prospect"].get("country", ""),
+                         "region": r["prospect"].get("region", ""),
                          "score": r["score"], "reason": r["reason"]} for r in ranked]})
     print("Selected:", ", ".join(f"{r['prospect']['name']}({r['score']})" for r in ranked))
 
