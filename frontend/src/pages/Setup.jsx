@@ -73,9 +73,6 @@ export default function Setup() {
             <Check size={13} className="text-success" /> Analyzed {profile.source_url} · {profile._pages_fetched ?? ''} pages reviewed · Edit the ICP below before your next run.
           </div>
         )}
-        {!profile && !analyzing && (
-          <div className="mt-3 text-xs text-muted">Try any real B2B site, e.g. stripe.com, vercel.com, notion.so.</div>
-        )}
       </div>
       </div>
 
