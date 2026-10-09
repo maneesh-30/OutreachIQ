@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Globe, Check, Database, ArrowRight } from 'lucide-react'
 import { Card, Button } from '../ui'
-import { analyzeSite, getCompany, saveCompany } from '../api'
+import { analyzeSite, saveCompany } from '../api'
 import { useApp } from '../state'
 
 const ICP_FIELDS = [
@@ -18,12 +18,6 @@ export default function Setup() {
   const [analyzing, setAnalyzing] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
-
-  useEffect(() => {
-    getCompany().then((c) => {
-      if (c && c.company_name) { setProfile(c); setIcp(c.icp || {}); setUrl(c.source_url || '') }
-    }).catch(() => {})
-  }, [])
 
   const analyze = async () => {
     if (!url.trim()) return
