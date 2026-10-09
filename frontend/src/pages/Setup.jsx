@@ -39,8 +39,11 @@ export default function Setup() {
     setTimeout(() => setSaved(false), 2500)
   }
 
+  const lifted = analyzing || !!profile
+
   return (
     <div>
+      <div style={{ paddingTop: lifted ? '0px' : '30vh', transition: 'padding-top .7s cubic-bezier(.16,1,.3,1)' }}>
       <div className="mx-auto max-w-2xl text-center">
         <h1 className="text-2xl font-semibold">Teach your agents what you sell</h1>
         <p className="mt-1 text-muted">Paste your company website. Agents study it to match prospects and write grounded emails.</p>
@@ -74,9 +77,25 @@ export default function Setup() {
           <div className="mt-3 text-xs text-muted">Try any real B2B site, e.g. stripe.com, vercel.com, notion.so.</div>
         )}
       </div>
+      </div>
 
-      {profile && (
-        <>
+      {analyzing && (
+        <div className="rocket mx-auto mt-12 max-w-3xl" style={{ height: 220 }}>
+          <div className="loader">
+            <span><span /><span /><span /><span /></span>
+            <div className="base"><span /><div className="face" /></div>
+          </div>
+          <div className="longfazers"><span /><span /><span /><span /></div>
+          <div className="clouds">
+            <div className="cloud cloud1" /><div className="cloud cloud2" /><div className="cloud cloud3" />
+            <div className="cloud cloud4" /><div className="cloud cloud5" />
+          </div>
+          <p className="absolute inset-x-0 bottom-2 text-center text-xs text-muted">Analyzing the site…</p>
+        </div>
+      )}
+
+      {profile && !analyzing && (
+        <div className="fade-up">
           <div className="mt-6 grid grid-cols-3 gap-5">
             <Card className="p-6">
               <h3 className="text-base font-medium">What you sell</h3>
@@ -132,7 +151,7 @@ export default function Setup() {
             <span className="text-sm text-muted">Profile ready. Your agents can now find matching companies.</span>
             <Link to="/new"><Button>Create a new run <ArrowRight size={16} /></Button></Link>
           </div>
-        </>
+        </div>
       )}
     </div>
   )
