@@ -23,14 +23,16 @@ def test_pool_loads():
 
 
 def test_discover_ranks_and_limits(monkeypatch):
-    # stub ICP + scoring so no network calls happen
+    # stub ICP + the batch scoring call so no network calls happen
+    import json
     monkeypatch.setattr(prospector, "_icp_summary", lambda ledger: "stub ICP")
 
-    def fake_score(company, icp, ledger):
-        score = 90 if "SaaS" in company["blurb"] else 10
-        return {"prospect": company, "score": score, "reason": "stub"}
+    def fake_cheap(prompt, **kw):
+        arr = [{"name": c["name"], "score": 90 if "SaaS" in c["blurb"] else 10, "reason": "stub"}
+               for c in prospector.load_pool()]
+        return json.dumps(arr)
 
-    monkeypatch.setattr(prospector, "_score_one", fake_score)
+    monkeypatch.setattr(prospector, "ask_cheap", fake_cheap)
 
     ranked = prospector.discover(top_n=3, ledger=Ledger())
     assert len(ranked) == 3

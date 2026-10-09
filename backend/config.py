@@ -38,4 +38,5 @@ def foundry_client():
 def cheap_client():
     from openai import OpenAI
 
-    return OpenAI(base_url=CHEAP_BASE_URL, api_key=CHEAP_API_KEY)
+    # free tier is rate-limited; let the client retry 429s with backoff
+    return OpenAI(base_url=CHEAP_BASE_URL, api_key=CHEAP_API_KEY, max_retries=5)
