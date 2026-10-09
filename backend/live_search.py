@@ -22,12 +22,14 @@ ENDPOINT = f"https://api.apify.com/v2/acts/{ACTOR}/run-sync-get-dataset-items"
 def generate_queries(icp: str, ledger: Ledger, n: int = 3) -> list[str]:
     prompt = (
         f"We sell to companies matching this ICP:\n{icp}\n\n"
-        f"Write {n} Google search queries that would surface REAL individual companies "
-        "that fit this ICP as potential CUSTOMERS (not vendors/tools we compete with). "
+        f"Write {n} plain Google search queries that surface LISTS of REAL individual "
+        "companies that fit this ICP as potential CUSTOMERS. Rules: natural phrasing, "
+        "NO quotation marks, NO boolean operators (AND/OR), 4-8 words each. Prefer forms "
+        'like "fast growing <industry> companies" or "top <segment> startups <year>". '
         "Return ONLY a JSON array of query strings."
     )
     arr = _json_array(ask_cheap(prompt, agent="query_gen", ledger=ledger, max_tokens=300))
-    qs = [q for q in arr if isinstance(q, str)][:n]
+    qs = [q.replace('"', "").strip() for q in arr if isinstance(q, str) and q.strip()][:n]
     return qs or ["fast growing B2B SaaS companies"]
 
 

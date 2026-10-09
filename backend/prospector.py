@@ -73,28 +73,33 @@ def _score_companies(companies: list[dict], icp: str, ledger: Ledger) -> list[di
     return scored
 
 
-def discover(top_n: int = 3, ledger: Ledger | None = None, source: str = "pool") -> list[dict]:
+def discover(top_n: int = 3, ledger: Ledger | None = None, source: str = "pool"):
+    """Returns (ranked, source_used). source_used is 'pool', 'live', or 'live→pool'
+    when a live search was requested but yielded nothing and the pool was used."""
     ledger = ledger or Ledger()
     icp = _icp_summary(ledger)
 
     companies = []
+    used = source
     if source == "live":
         from live_search import live_companies
         companies = live_companies(icp, ledger, want=max(top_n * 3, 8))
-    if not companies:  # pool, or live fell through
+        if not companies:
+            used = "live→pool"
+    if not companies:
         companies = load_pool()
 
     scored = _score_companies(companies, icp, ledger)
     scored.sort(key=lambda x: x["score"], reverse=True)
-    return scored[:top_n]
+    return scored[:top_n], used
 
 
 if __name__ == "__main__":
     import sys
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 5
     led = Ledger()
-    ranked = discover(top_n=n, ledger=led)
-    print(f"\nTop {n} prospects:")
+    ranked, used = discover(top_n=n, ledger=led, source=(sys.argv[2] if len(sys.argv) > 2 else "pool"))
+    print(f"\nTop {n} prospects (source={used}):")
     for i, r in enumerate(ranked, 1):
         print(f"{i:>2}. {r['score']:>3}  {r['prospect']['name']:<22} {r['reason']}")
     print("\ndiscovery cost by provider:", led.by_provider(), " total $", led.total_cost())
