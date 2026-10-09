@@ -50,29 +50,41 @@ def _json_array(text: str) -> list:
     return []
 
 
-def discover(top_n: int = 3, ledger: Ledger | None = None) -> list[dict]:
-    ledger = ledger or Ledger()
-    pool = load_pool()
-    icp = _icp_summary(ledger)
-
-    listing = "\n".join(f"{i+1}. {c['name']} — {c['blurb']}" for i, c in enumerate(pool))
+def _score_companies(companies: list[dict], icp: str, ledger: Ledger) -> list[dict]:
+    """Batch-score a list of companies against the ICP in one cheap-model call."""
+    if not companies:
+        return []
+    listing = "\n".join(f"{i+1}. {c['name']} — {c.get('blurb','')}" for i, c in enumerate(companies))
     prompt = (
         "Score how well EACH company matches the ICP below, 0-100, with a one-line reason. "
         "Return ONLY a JSON array, one object per company IN THE SAME ORDER as listed: "
         '[{"name": str, "score": int, "reason": str}, ...].\n\n'
         f"ICP:\n{icp}\n\nCompanies:\n{listing}"
     )
-    raw = ask_cheap(prompt, agent="prospector_score", ledger=ledger,
-                    system="You are a precise B2B qualification analyst. Output only a JSON array.",
-                    max_tokens=2000)
-    rows = _json_array(raw)
-
+    rows = _json_array(ask_cheap(prompt, agent="prospector_score", ledger=ledger,
+                                 system="You are a precise B2B qualification analyst. Output only a JSON array.",
+                                 max_tokens=2000))
     by_name = {str(r.get("name", "")).lower(): r for r in rows if isinstance(r, dict)}
     scored = []
-    for i, c in enumerate(pool):
+    for i, c in enumerate(companies):
         r = by_name.get(c["name"].lower()) or (rows[i] if i < len(rows) and isinstance(rows[i], dict) else {})
         scored.append({"prospect": c, "score": int(r.get("score", 0) or 0),
                        "reason": r.get("reason", "")})
+    return scored
+
+
+def discover(top_n: int = 3, ledger: Ledger | None = None, source: str = "pool") -> list[dict]:
+    ledger = ledger or Ledger()
+    icp = _icp_summary(ledger)
+
+    companies = []
+    if source == "live":
+        from live_search import live_companies
+        companies = live_companies(icp, ledger, want=max(top_n * 3, 8))
+    if not companies:  # pool, or live fell through
+        companies = load_pool()
+
+    scored = _score_companies(companies, icp, ledger)
     scored.sort(key=lambda x: x["score"], reverse=True)
     return scored[:top_n]
 
