@@ -44,6 +44,9 @@ def _persist(run_id: int, ev: dict, name2id: dict) -> None:
     t = ev.get("type")
     with Session() as s:
         if t == "discovered":
+            run = s.get(Run, run_id)
+            if run and ev.get("source_used"):
+                run.source = ev["source_used"]
             for p in ev["prospects"]:
                 row = Prospect(run_id=run_id, name=p["name"], domain=p.get("domain", ""),
                                discovery_score=p["score"], status="pending")
@@ -138,7 +141,7 @@ def start_run(payload: dict | None = None):
 def list_runs():
     with Session() as s:
         runs = s.query(Run).order_by(Run.id.desc()).all()
-        return [{"id": r.id, "top_n": r.top_n, "status": r.status,
+        return [{"id": r.id, "top_n": r.top_n, "status": r.status, "source": r.source,
                  "cost_total": round(r.cost_azure + r.cost_cheap, 6),
                  "created_at": r.created_at.isoformat()} for r in runs]
 
@@ -165,6 +168,7 @@ def get_run(run_id: int):
             })
         return {
             "id": run.id, "top_n": run.top_n, "status": run.status, "error": run.error,
+            "source": run.source,
             "cost": {"azure": run.cost_azure, "groq": run.cost_cheap,
                      "total": round(run.cost_azure + run.cost_cheap, 6)},
             "prospects": prospects,

@@ -34,8 +34,9 @@ def test_discover_ranks_and_limits(monkeypatch):
 
     monkeypatch.setattr(prospector, "ask_cheap", fake_cheap)
 
-    ranked = prospector.discover(top_n=3, ledger=Ledger())
+    ranked, used = prospector.discover(top_n=3, ledger=Ledger())
     assert len(ranked) == 3
+    assert used == "pool"
     scores = [r["score"] for r in ranked]
     assert scores == sorted(scores, reverse=True)   # sorted desc
     assert scores[0] == 90                           # best first
