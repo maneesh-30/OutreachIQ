@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Copy, RefreshCw, Lightbulb, Mail, FileText, Download, ExternalLink, Loader2 } from 'lucide-react'
-import { Card, Button } from '../ui'
+import { Card, Button, RegionChip } from '../ui'
 import { getRun, listRuns } from '../api'
 import { useApp } from '../state'
 
@@ -54,6 +54,7 @@ export default function Prospects() {
                   <span className={`text-lg font-semibold ${scoreColor(pr.fit_score ?? pr.discovery_score)}`}>{pr.fit_score ?? pr.discovery_score}</span>
                 </div>
                 <div className="mt-0.5 text-xs text-muted">{pr.domain || '—'}</div>
+                {(pr.country || pr.region) && <div className="mt-1.5"><RegionChip region={pr.region} country={pr.country} /></div>}
                 <div className="mt-1.5 text-xs">
                   {pr.status === 'done'
                     ? <span className="text-success">● Draft ready</span>
@@ -75,6 +76,7 @@ export default function Prospects() {
                 <div className="mt-2 flex items-center gap-3 text-sm">
                   <span className={`font-semibold ${scoreColor(p.fit_score)}`}>Fit {p.fit_score ?? '—'} / 100</span>
                   <span className="text-muted">Signal {p.discovery_score} / 100</span>
+                  <RegionChip region={p.region} country={p.country} />
                   <span className="text-muted">Run #{run.id}</span>
                 </div>
               </div>

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Search, ScanLine, Target, Lightbulb, Mail, Pause, CheckCircle2, Activity } from 'lucide-react'
-import { Card, StatusChip, ScoreBadge, RunningBar, SourceBadge } from '../ui'
+import { Card, StatusChip, ScoreBadge, RunningBar, SourceBadge, RegionChip } from '../ui'
 import { getRun, streamRun } from '../api'
 import { useApp } from '../state'
 
@@ -63,7 +63,7 @@ export default function LiveRun() {
       setStatus(run.status)
       setSource(run.source)
       setCost(run.cost)
-      const ps = run.prospects.map((p) => ({ name: p.name, domain: p.domain, score: p.discovery_score, reason: p.fit_reason }))
+      const ps = run.prospects.map((p) => ({ name: p.name, domain: p.domain, country: p.country, region: p.region, score: p.discovery_score, reason: p.fit_reason }))
       setProspects(ps)
       const st = {}
       run.prospects.forEach((p) => { st[p.name] = deriveStatuses(p) })
@@ -75,7 +75,7 @@ export default function LiveRun() {
       return streamRun(id, (ev) => {
         if (ev.type === 'discovered') {
           if (ev.source_used) setSource(ev.source_used)
-          setProspects(ev.prospects.map((p) => ({ name: p.name, domain: p.domain, score: p.score, reason: p.reason })))
+          setProspects(ev.prospects.map((p) => ({ name: p.name, domain: p.domain, country: p.country, region: p.region, score: p.score, reason: p.reason })))
           setSteps((prev) => {
             const next = { ...prev }
             ev.prospects.forEach((p) => {
@@ -174,6 +174,7 @@ export default function LiveRun() {
                   <div className="min-w-0">
                     <div className="truncate font-medium">{p.name}</div>
                     <div className="truncate text-xs text-muted">{p.domain || '—'}</div>
+                    <div className="mt-1"><RegionChip region={p.region} country={p.country} /></div>
                   </div>
                   <ScoreBadge value={p.score} />
                 </div>

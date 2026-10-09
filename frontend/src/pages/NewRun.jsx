@@ -20,6 +20,7 @@ export default function NewRun() {
   const [topN, setTopN] = useState(3)
   const [poolSize, setPoolSize] = useState(24)
   const [source, setSource] = useState('pool')
+  const [scope, setScope] = useState('both')
   const [busy, setBusy] = useState(false)
 
   useEffect(() => { getPool().then((p) => setPoolSize(p.length)).catch(() => {}) }, [])
@@ -27,7 +28,7 @@ export default function NewRun() {
   const start = async () => {
     setBusy(true)
     try {
-      const { run_id } = await startRun(topN, source)
+      const { run_id } = await startRun(topN, source, scope)
       setLastRunId(run_id)
       nav(`/live/${run_id}`)
     } catch (e) {
@@ -80,6 +81,25 @@ export default function NewRun() {
               ? 'Seed pool: 24 curated companies scored against your ICP.'
               : 'Live search: finds real companies on the web via Apify (slower, ~1 min).'}
           </div>
+
+          {source === 'live' && (
+            <>
+              <div className="mt-6 text-sm text-muted">Geographic scope</div>
+              <div className="mt-2 grid grid-cols-3 gap-3">
+                {[['both', 'Local + Global'], ['local', 'Local only'], ['international', 'International']].map(([v, label]) => (
+                  <button key={v} onClick={() => setScope(v)}
+                    className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition ${scope === v ? 'border-accent bg-accent/10 text-accent' : 'border-border text-muted hover:border-gray-500'}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-2 text-xs text-muted">
+                {scope === 'both' ? 'Finds companies in your country first, then expands internationally.'
+                  : scope === 'local' ? 'Only companies in your company\'s country.'
+                  : 'Companies worldwide, no country bias.'}
+              </div>
+            </>
+          )}
 
           <div className="mt-5 flex items-center justify-between text-sm">
             <span className="text-muted">Available pool <span className="font-semibold text-white">{poolSize} companies</span></span>
