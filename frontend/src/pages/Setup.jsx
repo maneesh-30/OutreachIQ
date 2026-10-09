@@ -55,9 +55,8 @@ export default function Setup() {
         {saved && <span className="rounded-full bg-success/10 px-3 py-1 text-xs text-success">● Profile saved</span>}
       </div>
 
-      <Card className="mt-6 p-6">
-        <div className="text-sm font-medium">Company website</div>
-        <label className="search-label mt-3">
+      <div className="mt-6">
+        <label className="search-label">
           <Globe size={17} className="search-left-icon" />
           <input
             value={url}
@@ -81,7 +80,7 @@ export default function Setup() {
         {!profile && !analyzing && (
           <div className="mt-3 text-xs text-muted">Try any real B2B site, e.g. stripe.com, vercel.com, notion.so.</div>
         )}
-      </Card>
+      </div>
 
       {profile && (
         <>
