@@ -29,3 +29,5 @@ Thumbs.db
 
 # kb runtime state
 backend/.kb_state.json
+
+backend/company_profile.json

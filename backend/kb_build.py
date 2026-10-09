@@ -25,6 +25,40 @@ def _load_state() -> dict:
     return json.loads(STATE.read_text()) if STATE.exists() else {}
 
 
+def _profile_to_docs(profile: dict) -> list[tuple[str, str]]:
+    """Turn a scraped company profile into named markdown docs for the KB."""
+    vp = "\n".join(f"- **{v.get('title','')}**: {v.get('desc','')}"
+                   for v in profile.get("value_props", []))
+    icp = profile.get("icp", {})
+    icp_md = "\n".join(f"- {k.replace('_',' ').title()}: {v}" for k, v in icp.items())
+    name = profile.get("company_name", "Company")
+    return [
+        ("company_profile.md",
+         f"# {name}\n\n## What we sell\n{profile.get('what_you_sell','')}\n\n## Value props\n{vp}\n\nSource: {profile.get('source_url','')}"),
+        ("icp.md", f"# {name} — Ideal Customer Profile\n{icp_md}"),
+        ("website.md", f"# {name} — website content\n{profile.get('_site_text','')}"),
+    ]
+
+
+def build_from_profile(profile: dict) -> str:
+    """Rebuild the KB vector store from a scraped company profile. Returns vector_store_id."""
+    client = foundry_client()
+    # best-effort: delete the previous store so they don't accumulate
+    old = _load_state().get("vector_store_id")
+    if old:
+        try:
+            client.vector_stores.delete(old)
+        except Exception:
+            pass
+
+    name = profile.get("company_name", "company")
+    vs = client.vector_stores.create(name=f"oiq-{name}-kb"[:60])
+    files = [(fname, content.encode("utf-8")) for fname, content in _profile_to_docs(profile)]
+    client.vector_stores.file_batches.upload_and_poll(vector_store_id=vs.id, files=files)
+    _save_state({"vector_store_id": vs.id, "company": name})
+    return vs.id
+
+
 def build() -> None:
     client = foundry_client()
     files = sorted(glob.glob(str(DATA_DIR / "*.md")))
