@@ -5,7 +5,7 @@ An AI sales team that researches your company, finds matching prospects, and wri
 Multi-agent system built on **Microsoft Azure AI Foundry** (Responses API + knowledge base), with model routing across **Azure** (gpt-4.1-mini, judgment/writing) and **Groq** (gpt-oss-20b, bulk fetch/extract) to cut cost without losing quality.
 
 ## Status
-Phase 6 — self-analyzer: paste any company URL → scrape the site → infer profile + ICP → rebuild the Foundry knowledge base live, so discovery and emails are grounded in that real company.
+Phase 6 — any-site mode: paste any company URL → scrape + infer profile/ICP → rebuild the Foundry knowledge base live; discover real prospect companies live from the web (Apify Google Search, with the seed pool as fallback), then research + write grounded emails.
 
 ## Setup
 ```bash
