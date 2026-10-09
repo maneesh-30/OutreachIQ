@@ -1,6 +1,6 @@
 """Agents. Each takes a prospect (+ prior results) and returns structured output.
 Model choice per agent encodes the orchestration thesis:
-  researcher / hook  -> cheap (Featherless)
+  researcher / hook  -> cheap (Groq)
   fit / pain / email -> smart + KB-grounded (Azure)
 """
 from __future__ import annotations
@@ -12,12 +12,30 @@ from router import ask_cheap, ask_smart, ask_kb, Ledger
 
 
 def _json(text: str) -> dict:
-    """Best-effort JSON extraction from a model reply."""
-    m = re.search(r"\{.*\}", text, re.DOTALL)
+    """Extract the FIRST balanced JSON object from a model reply.
+
+    Models (and the Responses API) sometimes emit the object twice or wrap it in
+    prose; a greedy regex would span both and fail, so scan for the first
+    brace-balanced object instead.
+    """
     try:
-        return json.loads(m.group(0) if m else text)
+        return json.loads(text)
     except Exception:
-        return {"_raw": text}
+        pass
+    start = text.find("{")
+    if start != -1:
+        depth = 0
+        for i in range(start, len(text)):
+            if text[i] == "{":
+                depth += 1
+            elif text[i] == "}":
+                depth -= 1
+                if depth == 0:
+                    try:
+                        return json.loads(text[start:i + 1])
+                    except Exception:
+                        break
+    return {"_raw": text}
 
 
 def researcher(prospect: dict, ledger: Ledger) -> dict:
@@ -70,7 +88,7 @@ def hook_finder(prospect: dict, facts: dict, ledger: Ledger) -> str:
         f"{prospect['name']}, based on these facts: {json.dumps(facts)}. "
         "Reply with the hook text only, no quotes."
     )
-    return ask_cheap(prompt, agent="hook_finder", ledger=ledger, max_tokens=40)
+    return ask_cheap(prompt, agent="hook_finder", ledger=ledger, max_tokens=300)
 
 
 def email_drafter(prospect: dict, pains: dict, hook: str, ledger: Ledger) -> dict:
