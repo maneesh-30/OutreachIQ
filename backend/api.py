@@ -45,7 +45,7 @@ def _persist(run_id: int, ev: dict, name2id: dict) -> None:
     with Session() as s:
         if t == "discovered":
             for p in ev["prospects"]:
-                row = Prospect(run_id=run_id, name=p["name"],
+                row = Prospect(run_id=run_id, name=p["name"], domain=p.get("domain", ""),
                                discovery_score=p["score"], status="pending")
                 s.add(row)
                 s.commit()
@@ -95,7 +95,7 @@ def _persist(run_id: int, ev: dict, name2id: dict) -> None:
             s.commit()
 
 
-def _worker(run_id: int, top_n: int, q: queue.Queue) -> None:
+def _worker(run_id: int, top_n: int, q: queue.Queue, source: str = "pool") -> None:
     name2id: dict = {}
 
     def emit(ev: dict) -> None:
@@ -105,7 +105,7 @@ def _worker(run_id: int, top_n: int, q: queue.Queue) -> None:
             q.put(ev)
 
     try:
-        orchestrator.run_batch(top_n=top_n, emit=emit)
+        orchestrator.run_batch(top_n=top_n, emit=emit, source=source)
     except Exception as e:  # noqa: BLE001
         with Session() as s:
             run = s.get(Run, run_id)
@@ -122,6 +122,7 @@ def _worker(run_id: int, top_n: int, q: queue.Queue) -> None:
 @app.post("/api/runs")
 def start_run(payload: dict | None = None):
     top_n = int((payload or {}).get("top_n", 3))
+    source = (payload or {}).get("source", "pool")
     with Session() as s:
         run = Run(top_n=top_n, status="running")
         s.add(run)
@@ -129,8 +130,8 @@ def start_run(payload: dict | None = None):
         run_id = run.id
     q: queue.Queue = queue.Queue()
     RUN_QUEUES[run_id] = q
-    threading.Thread(target=_worker, args=(run_id, top_n, q), daemon=True).start()
-    return {"run_id": run_id, "top_n": top_n, "status": "running"}
+    threading.Thread(target=_worker, args=(run_id, top_n, q, source), daemon=True).start()
+    return {"run_id": run_id, "top_n": top_n, "status": "running", "source": source}
 
 
 @app.get("/api/runs")
