@@ -1,11 +1,11 @@
 """Model router: single interface for all agents.
 
-- ask_cheap  -> Featherless (bulk: fetch/summarize/extract)
+- ask_cheap  -> Groq (bulk: fetch/summarize/extract)
 - ask_smart  -> Azure gpt-4.1-mini (judgment: score/reason/write)
 - ask_kb     -> Azure Responses API + file_search (grounded in the Foundry KB)
 
 Every call records tokens + estimated cost into a run-level Ledger so the
-dashboard can show the Azure-vs-Featherless split.
+dashboard can show the Azure-vs-Groq split.
 """
 from __future__ import annotations
 
@@ -13,12 +13,12 @@ import json
 import pathlib
 from dataclasses import dataclass, field
 
-from config import foundry_client, featherless_client, AZURE_CHAT_DEPLOYMENT, FEATHERLESS_MODEL
+from config import foundry_client, cheap_client, AZURE_CHAT_DEPLOYMENT, CHEAP_MODEL
 
 # rough USD per 1M tokens (edit to match current pricing)
 PRICING = {
     "azure": {"in": 0.40, "out": 1.60},
-    "featherless": {"in": 0.0, "out": 0.0},  # flat subscription -> treat as free
+    "groq": {"in": 0.0, "out": 0.0},  # free tier -> treat as free
 }
 
 _KB_STATE = pathlib.Path(__file__).resolve().parent / ".kb_state.json"
@@ -56,10 +56,10 @@ def ask_cheap(prompt: str, *, agent: str, ledger: Ledger | None = None,
               system: str | None = None, max_tokens: int = 800) -> str:
     msgs = ([{"role": "system", "content": system}] if system else []) + \
            [{"role": "user", "content": prompt}]
-    r = featherless_client().chat.completions.create(
-        model=FEATHERLESS_MODEL, messages=msgs, max_tokens=max_tokens, temperature=0.3)
+    r = cheap_client().chat.completions.create(
+        model=CHEAP_MODEL, messages=msgs, max_tokens=max_tokens, temperature=0.3)
     if ledger and r.usage:
-        ledger.add(agent, "featherless", FEATHERLESS_MODEL,
+        ledger.add(agent, "groq", CHEAP_MODEL,
                    r.usage.prompt_tokens, r.usage.completion_tokens)
     return r.choices[0].message.content.strip()
 

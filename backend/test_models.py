@@ -1,4 +1,4 @@
-"""Phase 0 smoke test: prove both Azure (gpt-4.1-mini) and Featherless (Llama-3.1-8B) respond."""
+"""Phase 0 smoke test: prove both Azure (gpt-4.1-mini) and the cheap Groq model respond."""
 import os
 from dotenv import load_dotenv
 from openai import AzureOpenAI, OpenAI
@@ -17,23 +17,23 @@ def test_azure() -> None:
         messages=[{"role": "user", "content": "Reply with exactly: AZURE OK"}],
         max_tokens=10,
     )
-    print("Azure  ->", resp.choices[0].message.content.strip())
+    print("Azure ->", resp.choices[0].message.content.strip())
 
 
-def test_featherless() -> None:
+def test_cheap() -> None:
     client = OpenAI(
-        base_url=os.environ["FEATHERLESS_BASE_URL"],
-        api_key=os.environ["FEATHERLESS_API_KEY"],
+        base_url=os.environ["CHEAP_BASE_URL"],
+        api_key=os.environ["CHEAP_API_KEY"],
     )
     resp = client.chat.completions.create(
-        model=os.environ["FEATHERLESS_MODEL"],
-        messages=[{"role": "user", "content": "Reply with exactly: FEATHERLESS OK"}],
+        model=os.environ["CHEAP_MODEL"],
+        messages=[{"role": "user", "content": "Reply with exactly: CHEAP OK"}],
         max_tokens=10,
     )
-    print("Feather->", resp.choices[0].message.content.strip())
+    print("Cheap ->", resp.choices[0].message.content.strip())
 
 
 if __name__ == "__main__":
     test_azure()
-    test_featherless()
+    test_cheap()
     print("\nPhase 0 done if both printed OK.")

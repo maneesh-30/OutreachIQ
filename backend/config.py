@@ -16,10 +16,10 @@ AZURE_EMBED_DEPLOYMENT = os.environ.get("AZURE_EMBED_DEPLOYMENT", "text-embeddin
 # Foundry "v1" OpenAI surface (Responses API, vector stores, chat all live here)
 FOUNDRY_V1_BASE = f"{AZURE_OPENAI_ENDPOINT}/openai/v1/"
 
-# ---- Featherless (cheap bulk model) ----
-FEATHERLESS_API_KEY = os.environ["FEATHERLESS_API_KEY"]
-FEATHERLESS_BASE_URL = os.environ["FEATHERLESS_BASE_URL"]
-FEATHERLESS_MODEL = os.environ["FEATHERLESS_MODEL"]
+# ---- Cheap bulk provider (Groq, OpenAI-compatible) ----
+CHEAP_API_KEY = os.environ["CHEAP_API_KEY"]
+CHEAP_BASE_URL = os.environ["CHEAP_BASE_URL"]
+CHEAP_MODEL = os.environ["CHEAP_MODEL"]
 
 
 @lru_cache
@@ -35,7 +35,7 @@ def foundry_client():
 
 
 @lru_cache
-def featherless_client():
+def cheap_client():
     from openai import OpenAI
 
-    return OpenAI(base_url=FEATHERLESS_BASE_URL, api_key=FEATHERLESS_API_KEY)
+    return OpenAI(base_url=CHEAP_BASE_URL, api_key=CHEAP_API_KEY)
