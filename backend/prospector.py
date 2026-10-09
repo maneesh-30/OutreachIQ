@@ -37,7 +37,7 @@ def _score_one(company: dict, icp: str, ledger: Ledger) -> dict:
     )
     d = _json(ask_cheap(prompt, agent="prospector_score", ledger=ledger,
                         system="You are a precise B2B qualification analyst. Output only JSON.",
-                        max_tokens=120))
+                        max_tokens=400))
     return {"prospect": company, "score": int(d.get("score", 0)), "reason": d.get("reason", "")}
 
 
