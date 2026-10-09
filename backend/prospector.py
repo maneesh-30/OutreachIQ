@@ -1,8 +1,8 @@
 """Discovery: find fitting prospects from the seed pool, ranked against OUR ICP.
 
-ICP is pulled ONCE from the Foundry knowledge base (grounded), then each pool
-company is scored by the cheap model (bulk) — the orchestration thesis applied
-to discovery.
+ICP is pulled ONCE from the Foundry knowledge base (grounded). The whole pool is
+then scored in a SINGLE cheap-model call (batch) — fast, and well under the free
+Groq token-per-minute limit that many small calls would blow through.
 """
 from __future__ import annotations
 
@@ -10,7 +10,6 @@ import json
 import pathlib
 
 from router import ask_cheap, ask_kb, Ledger
-from agents import _json
 
 POOL = pathlib.Path(__file__).resolve().parent.parent / "data" / "prospects" / "pool.json"
 
@@ -21,31 +20,59 @@ def load_pool() -> list[dict]:
 
 def _icp_summary(ledger: Ledger) -> str:
     text, _ = ask_kb(
-        "Summarize OUR Ideal Customer Profile from the knowledge base in 4-6 bullet "
-        "points: industry, size, stage, growth signals, and clear anti-signals.",
+        "Summarize OUR Ideal Customer Profile from the knowledge base in 4-6 short "
+        "bullets: industry, size, stage, growth signals, anti-signals. Be concise.",
         agent="prospector_icp", ledger=ledger,
     )
     return text
 
 
-def _score_one(company: dict, icp: str, ledger: Ledger) -> dict:
-    prompt = (
-        "Score how well this company matches the ICP below, 0-100, and give a one-line "
-        "reason. Return JSON: {\"score\": int, \"reason\": str}.\n\n"
-        f"ICP:\n{icp}\n\n"
-        f"Company: {company['name']}\nDescription: {company['blurb']}"
-    )
-    d = _json(ask_cheap(prompt, agent="prospector_score", ledger=ledger,
-                        system="You are a precise B2B qualification analyst. Output only JSON.",
-                        max_tokens=400))
-    return {"prospect": company, "score": int(d.get("score", 0)), "reason": d.get("reason", "")}
+def _json_array(text: str) -> list:
+    """Extract the first balanced JSON array from a model reply."""
+    try:
+        v = json.loads(text)
+        return v if isinstance(v, list) else []
+    except Exception:
+        pass
+    start = text.find("[")
+    if start != -1:
+        depth = 0
+        for i in range(start, len(text)):
+            if text[i] == "[":
+                depth += 1
+            elif text[i] == "]":
+                depth -= 1
+                if depth == 0:
+                    try:
+                        return json.loads(text[start:i + 1])
+                    except Exception:
+                        break
+    return []
 
 
 def discover(top_n: int = 3, ledger: Ledger | None = None) -> list[dict]:
     ledger = ledger or Ledger()
     pool = load_pool()
     icp = _icp_summary(ledger)
-    scored = [_score_one(c, icp, ledger) for c in pool]
+
+    listing = "\n".join(f"{i+1}. {c['name']} — {c['blurb']}" for i, c in enumerate(pool))
+    prompt = (
+        "Score how well EACH company matches the ICP below, 0-100, with a one-line reason. "
+        "Return ONLY a JSON array, one object per company IN THE SAME ORDER as listed: "
+        '[{"name": str, "score": int, "reason": str}, ...].\n\n'
+        f"ICP:\n{icp}\n\nCompanies:\n{listing}"
+    )
+    raw = ask_cheap(prompt, agent="prospector_score", ledger=ledger,
+                    system="You are a precise B2B qualification analyst. Output only a JSON array.",
+                    max_tokens=2000)
+    rows = _json_array(raw)
+
+    by_name = {str(r.get("name", "")).lower(): r for r in rows if isinstance(r, dict)}
+    scored = []
+    for i, c in enumerate(pool):
+        r = by_name.get(c["name"].lower()) or (rows[i] if i < len(rows) and isinstance(rows[i], dict) else {})
+        scored.append({"prospect": c, "score": int(r.get("score", 0) or 0),
+                       "reason": r.get("reason", "")})
     scored.sort(key=lambda x: x["score"], reverse=True)
     return scored[:top_n]
 

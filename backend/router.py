@@ -57,7 +57,8 @@ def ask_cheap(prompt: str, *, agent: str, ledger: Ledger | None = None,
     msgs = ([{"role": "system", "content": system}] if system else []) + \
            [{"role": "user", "content": prompt}]
     r = cheap_client().chat.completions.create(
-        model=CHEAP_MODEL, messages=msgs, max_tokens=max_tokens, temperature=0.3)
+        model=CHEAP_MODEL, messages=msgs, max_tokens=max_tokens, temperature=0.3,
+        reasoning_effort="low")  # cut hidden reasoning tokens (speed + stay under TPM)
     if ledger and r.usage:
         ledger.add(agent, "groq", CHEAP_MODEL,
                    r.usage.prompt_tokens, r.usage.completion_tokens)
