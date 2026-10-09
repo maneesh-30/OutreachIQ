@@ -28,7 +28,7 @@ export default function Dashboard() {
   const avgPer = doneProspects ? totalSpend / doneProspects : 0
 
   const pie = [
-    { name: 'Azure', value: azure, color: '#5b8cff' },
+    { name: 'Azure', value: azure, color: '#e4e4e7' },
     { name: 'Groq', value: Math.max(groq, 0.0001), color: '#3dd68c' },
   ]
   const pctAzure = totalSpend ? (azure / totalSpend) * 100 : 0
@@ -70,7 +70,7 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex-1 space-y-4">
-              <Legend color="#5b8cff" label="Azure" value={`$${azure.toFixed(3)}`} pct={pctAzure} />
+              <Legend color="#e4e4e7" label="Azure" value={`$${azure.toFixed(3)}`} pct={pctAzure} />
               <Legend color="#3dd68c" label="Groq" value={`$${groq.toFixed(3)}`} pct={100 - pctAzure} />
               <p className="text-xs text-muted">Azure carries research and generation; Groq handles bulk extraction (near-free).</p>
             </div>

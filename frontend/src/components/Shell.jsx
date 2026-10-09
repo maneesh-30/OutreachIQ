@@ -51,7 +51,7 @@ export default function Shell() {
               to={to}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${
-                  isActive ? 'bg-accent text-white' : 'text-gray-300 hover:bg-white/5'
+                  isActive ? 'bg-white text-black' : 'text-gray-300 hover:bg-white/5'
                 }`
               }
             >

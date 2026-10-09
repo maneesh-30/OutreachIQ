@@ -10,7 +10,7 @@ export function Card({ className = '', children, ...p }) {
 
 export function Button({ variant = 'primary', className = '', children, ...p }) {
   const styles = {
-    primary: 'bg-accent text-white hover:brightness-110',
+    primary: 'bg-white text-black hover:bg-white/90',
     ghost: 'bg-surface2 border border-border text-gray-200 hover:border-gray-500',
     subtle: 'bg-transparent border border-border text-gray-300 hover:border-gray-500',
   }
