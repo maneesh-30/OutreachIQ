@@ -14,7 +14,7 @@ const AGENTS = [
 ]
 const PER = 0.3
 
-export default function NewRun() {
+export default function NewRun({ onStarted }) {
   const nav = useNavigate()
   const { setLastRunId, company } = useApp()
   const [topN, setTopN] = useState(3)
@@ -30,7 +30,8 @@ export default function NewRun() {
     try {
       const { run_id } = await startRun(topN, source, scope)
       setLastRunId(run_id)
-      nav(`/live/${run_id}`)
+      if (onStarted) onStarted(run_id)
+      else nav(`/live/${run_id}`)
     } catch (e) {
       setBusy(false)
       alert('Failed to start run: ' + e.message)

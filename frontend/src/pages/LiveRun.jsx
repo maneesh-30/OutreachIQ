@@ -41,11 +41,12 @@ function deriveStatuses(p) {
   return s
 }
 
-export default function LiveRun() {
-  const { runId } = useParams()
+export default function LiveRun({ runId: propRunId }) {
+  const { runId: paramRunId } = useParams()
   const { lastRunId } = useApp()
   const nav = useNavigate()
-  const id = runId ? Number(runId) : lastRunId
+  // when embedded (prop passed, even null) use it; standalone falls back to route/last run
+  const id = propRunId !== undefined ? propRunId : (paramRunId ? Number(paramRunId) : lastRunId)
 
   const [prospects, setProspects] = useState([]) // [{name, score, reason, domain}]
   const [steps, setSteps] = useState({})         // {name: {agent: {status, out}}}
@@ -117,7 +118,7 @@ export default function LiveRun() {
 
   if (!id) {
     return (
-      <div className="grid h-full place-items-center text-center">
+      <div className="grid min-h-[220px] place-items-center text-center">
         <div>
           <p className="text-muted">No active run.</p>
           <Link to="/new" className="mt-3 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white">Start a run</Link>

@@ -26,7 +26,7 @@ export default function Landing() {
 
   const go = () => {
     const u = url.trim()
-    nav(u ? `/setup?url=${encodeURIComponent(u)}` : '/setup')
+    nav(u ? `/app?url=${encodeURIComponent(u)}` : '/app')
   }
 
   return (
@@ -47,7 +47,7 @@ export default function Landing() {
             <a href="#" className="transition hover:opacity-70">Pricing</a>
             <a href="#" className="transition hover:opacity-70">Docs</a>
           </nav>
-          <button onClick={() => nav('/dashboard')}
+          <button onClick={() => nav('/app')}
             className="rounded-xl px-4 py-2.5 text-sm font-medium text-white"
             style={{ background: 'linear-gradient(180deg,#3d3d3f,#1d1d20)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.1), 0 2px 14px rgba(0,0,0,.28)' }}>
             Open app

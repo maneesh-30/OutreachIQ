@@ -5,8 +5,9 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import { Card, StatTile, StatusChip, SourceBadge } from '../ui'
 import { listRuns, getRun } from '../api'
 
-export default function Dashboard() {
+export default function Dashboard({ onOpenRun }) {
   const nav = useNavigate()
+  const openRun = (id) => (onOpenRun ? onOpenRun(id) : nav(id != null ? `/prospects/${id}` : '/prospects'))
   const [runs, setRuns] = useState([])
   const [details, setDetails] = useState([])
 
@@ -81,7 +82,7 @@ export default function Dashboard() {
           <h3 className="text-base font-medium">Ready for your next conversation</h3>
           <div className="mt-3 text-4xl font-semibold">{doneProspects}</div>
           <div className="mt-1 text-sm text-muted">Emails ready to review</div>
-          <button onClick={() => nav('/prospects')} className="mt-4 text-sm text-accent hover:underline">Review prospects →</button>
+          <button onClick={() => openRun()} className="mt-4 text-sm text-accent hover:underline">Review prospects →</button>
         </Card>
       </div>
 
@@ -103,7 +104,7 @@ export default function Dashboard() {
           </thead>
           <tbody>
             {runs.map((r) => (
-              <tr key={r.id} onClick={() => nav(`/prospects/${r.id}`)}
+              <tr key={r.id} onClick={() => openRun(r.id)}
                 className="cursor-pointer border-b border-border/60 hover:bg-white/5">
                 <td className="px-6 py-3.5 text-accent">#{String(r.id).padStart(3, '0')}</td>
                 <td className="px-6 py-3.5 text-muted">{new Date(r.created_at).toLocaleString()}</td>

@@ -7,10 +7,12 @@ import { useApp } from '../state'
 
 const scoreColor = (v) => (v >= 85 ? 'text-success' : v >= 65 ? 'text-warn' : 'text-muted')
 
-export default function Prospects() {
-  const { runId } = useParams()
+export default function Prospects({ runId: propRunId }) {
+  const { runId: paramRunId } = useParams()
   const { lastRunId } = useApp()
-  const [id, setId] = useState(runId ? Number(runId) : lastRunId)
+  const [id, setId] = useState(propRunId !== undefined ? propRunId : (paramRunId ? Number(paramRunId) : lastRunId))
+
+  useEffect(() => { if (propRunId !== undefined) setId(propRunId) }, [propRunId])
   const [run, setRun] = useState(null)
   const [sel, setSel] = useState(0)
 
@@ -20,7 +22,7 @@ export default function Prospects() {
   }, [id])
 
   if (id == null) return <Empty />
-  if (!run) return <div className="grid h-full place-items-center text-muted"><Loader2 className="animate-spin" /></div>
+  if (!run) return <div className="grid min-h-[220px] place-items-center text-muted"><Loader2 className="animate-spin" /></div>
   if (run.prospects.length === 0) return <Empty />
 
   const p = run.prospects[Math.min(sel, run.prospects.length - 1)]
@@ -163,7 +165,7 @@ function Field({ label, value }) {
 
 function Empty() {
   return (
-    <div className="grid h-full place-items-center text-center">
+    <div className="grid min-h-[220px] place-items-center text-center">
       <div>
         <p className="text-muted">No prospects yet.</p>
         <Link to="/new" className="mt-3 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white">Start a run</Link>

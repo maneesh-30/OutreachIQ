@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AppProvider } from './state'
 import Shell from './components/Shell'
 import Landing from './pages/Landing'
+import Workspace from './pages/Workspace'
 import Setup from './pages/Setup'
 import NewRun from './pages/NewRun'
 import LiveRun from './pages/LiveRun'
@@ -14,6 +15,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/app" element={<Workspace />} />
           <Route element={<Shell />}>
             <Route path="/setup" element={<Setup />} />
             <Route path="/new" element={<NewRun />} />

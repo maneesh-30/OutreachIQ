@@ -17,7 +17,7 @@ const STAGES = [
   { label: 'Building knowledge base', icon: Database },
 ]
 
-export default function Setup() {
+export default function Setup({ onProceed }) {
   const { refreshCompany } = useApp()
   const [searchParams] = useSearchParams()
   const [url, setUrl] = useState('')
@@ -195,7 +195,9 @@ export default function Setup() {
 
           <div className="mt-5 flex items-center justify-between">
             <span className="text-sm text-muted">Profile ready. Your agents can now find matching companies.</span>
-            <Link to="/new"><Button>Create a new run <ArrowRight size={16} /></Button></Link>
+            {onProceed
+              ? <Button onClick={onProceed}>Create a new run <ArrowRight size={16} /></Button>
+              : <Link to="/new"><Button>Create a new run <ArrowRight size={16} /></Button></Link>}
           </div>
         </>
       )}
