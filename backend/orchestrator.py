@@ -1,4 +1,8 @@
-"""Run the agent pipeline: on one prospect, or on the top-N discovered prospects."""
+"""Run the agent pipeline: one prospect, or the top-N discovered prospects.
+
+An optional `emit(event: dict)` callback receives progress events so callers
+(the API/SSE layer) can persist + stream live. CLI usage is unchanged.
+"""
 import json
 import sys
 
@@ -19,46 +23,64 @@ PROSPECT = {
 }
 
 
-def run_pipeline(prospect: dict, ledger: Ledger, verbose: bool = True) -> dict:
-    """Full per-prospect chain: research -> fit -> pain -> hook -> email."""
-    def log(*a):
+def _noop(_event):
+    pass
+
+
+def run_pipeline(prospect: dict, ledger: Ledger, emit=_noop, verbose: bool = True) -> dict:
+    """Full per-prospect chain: research -> fit -> pain -> hook -> email.
+    Emits a 'step' event after each agent with its output + the ledger entry.
+    """
+    out = {"prospect": prospect}
+
+    def step(agent_name, fn):
+        emit({"type": "step", "prospect": prospect["name"], "agent": agent_name,
+              "status": "running"})
+        result = fn()
+        last = ledger.steps[-1] if ledger.steps else {}
+        emit({"type": "step", "prospect": prospect["name"], "agent": agent_name,
+              "status": "done", "output": result, "ledger": last})
         if verbose:
-            print(*a)
+            print(f"  {agent_name}:", json.dumps(result) if not isinstance(result, str) else result)
+        return result
 
-    log(f"\n=== {prospect['name']} ===")
-    facts = agents.researcher(prospect, ledger)
-    log("  researcher:", json.dumps(facts))
-    fit = agents.fit_scorer(prospect, facts, ledger)
-    log("  fit:", json.dumps(fit))
-    pains = agents.pain_mapper(prospect, facts, ledger)
-    log("  pains:", json.dumps(pains))
-    hook = agents.hook_finder(prospect, facts, ledger)
-    log("  hook:", hook)
-    email = agents.email_drafter(prospect, pains, hook, ledger)
-    log("  EMAIL:", email.get("subject", ""))
-    log("  " + email.get("body", email.get("_raw", "")).replace("\n", "\n  "))
+    emit({"type": "prospect_start", "prospect": prospect["name"]})
+    facts = step("researcher", lambda: agents.researcher(prospect, ledger))
+    fit = step("fit_scorer", lambda: agents.fit_scorer(prospect, facts, ledger))
+    pains = step("pain_mapper", lambda: agents.pain_mapper(prospect, facts, ledger))
+    hook = step("hook_finder", lambda: agents.hook_finder(prospect, facts, ledger))
+    email = step("email_drafter", lambda: agents.email_drafter(prospect, pains, hook, ledger))
 
-    return {"prospect": prospect, "facts": facts, "fit": fit,
-            "pains": pains, "hook": hook, "email": email}
+    out.update({"facts": facts, "fit": fit, "pains": pains, "hook": hook, "email": email})
+    emit({"type": "prospect_done", "prospect": prospect["name"], "result": out})
+    return out
 
 
-def run_batch(top_n: int = 3) -> list[dict]:
+def run_batch(top_n: int = 3, emit=_noop) -> dict:
     ledger = Ledger()
+    emit({"type": "discovery_start", "top_n": top_n})
     print(f"Discovering top {top_n} prospects...")
     ranked = discover(top_n=top_n, ledger=ledger)
+    emit({"type": "discovered",
+          "prospects": [{"name": r["prospect"]["name"], "score": r["score"],
+                         "reason": r["reason"]} for r in ranked]})
     print("Selected:", ", ".join(f"{r['prospect']['name']}({r['score']})" for r in ranked))
 
     results = []
     for r in ranked:
-        out = run_pipeline(r["prospect"], ledger)
-        out["discovery_score"] = r["score"]
-        results.append(out)
+        res = run_pipeline(r["prospect"], ledger, emit=emit)
+        res["discovery_score"] = r["score"]
+        results.append(res)
+
+    summary = {"results": results, "cost": ledger.by_provider(),
+               "total_cost": ledger.total_cost(), "steps": ledger.steps}
+    emit({"type": "run_done", "cost": ledger.by_provider(), "total_cost": ledger.total_cost()})
 
     print("\n==== BATCH COST ====")
     print("by provider:", ledger.by_provider(), " total $", ledger.total_cost())
     print(f"prospects: {len(results)}  "
           f"avg $/prospect: {ledger.total_cost()/max(len(results),1):.6f}")
-    return results
+    return summary
 
 
 if __name__ == "__main__":
