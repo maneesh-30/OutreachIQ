@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Globe, Sparkles, Check, Database, ArrowRight, Loader2 } from 'lucide-react'
+import { Globe, Sparkles, Check, Database, ArrowRight, Loader2, FileText } from 'lucide-react'
 import { Card, Button } from '../ui'
 import { analyzeSite, getCompany, saveCompany } from '../api'
 import { useApp } from '../state'
@@ -10,14 +10,26 @@ const ICP_FIELDS = [
   ['geography', 'Geography'], ['signals', 'Buying signals'], ['anti_signals', 'Anti-signals'],
 ]
 
+const STAGES = [
+  { label: 'Fetching website', icon: Globe },
+  { label: 'Reading key pages', icon: FileText },
+  { label: 'Extracting company profile', icon: Sparkles },
+  { label: 'Building knowledge base', icon: Database },
+]
+
 export default function Setup() {
   const { refreshCompany } = useApp()
   const [url, setUrl] = useState('')
   const [profile, setProfile] = useState(null)
   const [icp, setIcp] = useState({})
   const [analyzing, setAnalyzing] = useState(false)
+  const [stepIdx, setStepIdx] = useState(-1)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const timers = useRef([])
+
+  const clearTimers = () => { timers.current.forEach(clearTimeout); timers.current = [] }
+  useEffect(() => clearTimers, [])
 
   useEffect(() => {
     getCompany().then((c) => {
@@ -28,11 +40,23 @@ export default function Setup() {
   const analyze = async () => {
     if (!url.trim()) return
     setAnalyzing(true); setError(''); setSaved(false)
+    setStepIdx(0)
+    // advance through the real stages on estimated timing; hold on the last until done
+    timers.current = [
+      setTimeout(() => setStepIdx(1), 3500),
+      setTimeout(() => setStepIdx(2), 7000),
+      setTimeout(() => setStepIdx(3), 13000),
+    ]
     try {
       const p = await analyzeSite(url.trim())
+      clearTimers()
+      setStepIdx(STAGES.length) // all done
       setProfile(p); setIcp(p.icp || {})
       refreshCompany()
+      setTimeout(() => setStepIdx(-1), 600)
     } catch (e) {
+      clearTimers()
+      setStepIdx(-1)
       setError(String(e.message || e))
     } finally {
       setAnalyzing(false)
@@ -79,6 +103,29 @@ export default function Setup() {
           <div className="mt-3 text-xs text-muted">Try any real B2B site, e.g. stripe.com, vercel.com, notion.so.</div>
         )}
       </Card>
+
+      {stepIdx >= 0 && (
+        <Card className="mt-6 p-6">
+          <div className="text-sm font-medium">Analyzing {url}</div>
+          <div className="mt-4 space-y-3">
+            {STAGES.map((st, i) => {
+              const done = i < stepIdx
+              const running = i === stepIdx
+              const Icon = st.icon
+              return (
+                <div key={st.label} className="flex items-center gap-3">
+                  <span className={`grid h-7 w-7 place-items-center rounded-lg ${done ? 'bg-success/15 text-success' : running ? 'bg-warn/15 text-warn' : 'bg-white/5 text-muted'}`}>
+                    {done ? <Check size={15} /> : running ? <Loader2 size={15} className="animate-spin" /> : <Icon size={15} />}
+                  </span>
+                  <span className={`text-sm ${done ? 'text-gray-200' : running ? 'text-white' : 'text-muted'}`}>{st.label}</span>
+                  {done && <span className="ml-auto text-xs text-success">done</span>}
+                  {running && <span className="ml-auto text-xs text-warn">working…</span>}
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+      )}
 
       {profile && (
         <>
