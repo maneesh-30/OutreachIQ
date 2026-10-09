@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Users, ScanLine, DollarSign, Activity, Calendar } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
-import { Card, StatTile, StatusChip } from '../ui'
+import { Card, StatTile, StatusChip, SourceBadge } from '../ui'
 import { listRuns, getRun } from '../api'
 
 export default function Dashboard() {
@@ -96,6 +96,7 @@ export default function Dashboard() {
               <th className="px-6 py-3 font-medium">Run#</th>
               <th className="px-6 py-3 font-medium">Date</th>
               <th className="px-6 py-3 font-medium">#prospects</th>
+              <th className="px-6 py-3 font-medium">Source</th>
               <th className="px-6 py-3 font-medium">Status</th>
               <th className="px-6 py-3 font-medium">Cost</th>
             </tr>
@@ -107,11 +108,12 @@ export default function Dashboard() {
                 <td className="px-6 py-3.5 text-accent">#{String(r.id).padStart(3, '0')}</td>
                 <td className="px-6 py-3.5 text-muted">{new Date(r.created_at).toLocaleString()}</td>
                 <td className="px-6 py-3.5">{r.top_n}</td>
+                <td className="px-6 py-3.5"><SourceBadge source={r.source} /></td>
                 <td className="px-6 py-3.5"><StatusChip status={r.status === 'done' ? 'done' : r.status === 'error' ? 'error' : 'running'} /></td>
                 <td className="px-6 py-3.5">${(r.cost_total || 0).toFixed(3)}</td>
               </tr>
             ))}
-            {runs.length === 0 && <tr><td colSpan={5} className="px-6 py-8 text-center text-muted">No runs yet.</td></tr>}
+            {runs.length === 0 && <tr><td colSpan={6} className="px-6 py-8 text-center text-muted">No runs yet.</td></tr>}
           </tbody>
         </table>
       </Card>

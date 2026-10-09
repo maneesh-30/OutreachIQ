@@ -64,6 +64,16 @@ export function StatTile({ icon: Icon, label, value, sub }) {
   )
 }
 
+export function SourceBadge({ source }) {
+  const map = {
+    live: { t: 'Live web', c: 'bg-success/10 text-success' },
+    pool: { t: 'Seed pool', c: 'bg-white/5 text-muted' },
+    'live→pool': { t: 'Live → pool fallback', c: 'bg-warn/10 text-warn' },
+  }
+  const s = map[source] || map.pool
+  return <span className={`rounded-full px-2 py-0.5 text-xs ${s.c}`}>{s.t}</span>
+}
+
 export function Spinner({ size = 16 }) {
   return <Loader2 size={size} className="animate-spin text-accent" />
 }
