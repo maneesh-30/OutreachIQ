@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Globe, Check, Database, ArrowRight, Loader2 } from 'lucide-react'
+import { Globe, Check, Database, ArrowRight } from 'lucide-react'
 import { Card, Button } from '../ui'
 import { analyzeSite, getCompany, saveCompany } from '../api'
 import { useApp } from '../state'
@@ -65,9 +65,10 @@ export default function Setup() {
             placeholder="Paste your company website — stripe.com, notion.so…"
             style={{ paddingRight: '128px' }}
           />
-          <button type="button" className="kbd-btn" onClick={analyze} disabled={analyzing}>
+          <button type="button" className="kbd-btn" onClick={analyze} disabled={analyzing}
+            style={analyzing ? { minWidth: 92, justifyContent: 'center' } : undefined}>
             {analyzing
-              ? <><Loader2 size={13} className="animate-spin" /> Analyzing…</>
+              ? <span className="loader-matrix" />
               : <>Analyze <span className="opacity-60">↵</span></>}
           </button>
         </label>
