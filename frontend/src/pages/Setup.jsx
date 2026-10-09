@@ -43,10 +43,10 @@ export default function Setup() {
 
   return (
     <div>
-      <div style={{ paddingTop: lifted ? '0px' : '30vh', transition: 'padding-top .7s cubic-bezier(.16,1,.3,1)' }}>
+      <div style={{ paddingTop: lifted ? '0px' : '20vh', transition: 'padding-top .7s cubic-bezier(.16,1,.3,1)' }}>
       <div className="mx-auto max-w-2xl text-center">
-        <h1 className="text-2xl font-semibold">Teach your agents what you sell</h1>
-        <p className="mt-1 text-muted">Paste your company website. Agents study it to match prospects and write grounded emails.</p>
+        <h1 className="font-display text-4xl font-bold leading-tight sm:text-5xl">Meet the companies that need what you sell.</h1>
+        <p className="mt-3 text-muted">Found, researched, and written to — ready for your reply.</p>
         {saved && <span className="mt-3 inline-block rounded-full bg-success/10 px-3 py-1 text-xs text-success">● Profile saved</span>}
       </div>
 
