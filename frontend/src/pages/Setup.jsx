@@ -41,15 +41,13 @@ export default function Setup() {
 
   return (
     <div>
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Teach your agents what you sell</h1>
-          <p className="mt-1 text-muted">Paste your company website. Agents study it to match prospects and write grounded emails.</p>
-        </div>
-        {saved && <span className="rounded-full bg-success/10 px-3 py-1 text-xs text-success">● Profile saved</span>}
+      <div className="mx-auto max-w-2xl text-center">
+        <h1 className="text-2xl font-semibold">Teach your agents what you sell</h1>
+        <p className="mt-1 text-muted">Paste your company website. Agents study it to match prospects and write grounded emails.</p>
+        {saved && <span className="mt-3 inline-block rounded-full bg-success/10 px-3 py-1 text-xs text-success">● Profile saved</span>}
       </div>
 
-      <div className="mt-6">
+      <div className="mx-auto mt-6 max-w-xl text-center">
         <label className="search-label">
           <Globe size={17} className="search-left-icon" />
           <input
