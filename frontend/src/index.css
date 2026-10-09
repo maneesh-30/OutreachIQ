@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&display=swap");
-.font-display { font-family: "Inter", sans-serif; letter-spacing: -0.02em; }
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700&display=swap");
+.font-display { font-family: "Roboto Mono", monospace; letter-spacing: -0.02em; }
 
 @theme {
   --color-bg: #060607;        /* premium black */
