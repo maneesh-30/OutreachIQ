@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Search, ScanLine, Target, Lightbulb, Mail, Pause, CheckCircle2, Activity } from 'lucide-react'
-import { Card, StatusChip, ScoreBadge, RunningBar } from '../ui'
+import { Card, StatusChip, ScoreBadge, RunningBar, SourceBadge } from '../ui'
 import { getRun, streamRun } from '../api'
 import { useApp } from '../state'
 
@@ -52,6 +52,7 @@ export default function LiveRun() {
   const [cost, setCost] = useState({ azure: 0, groq: 0, total: 0 })
   const [activity, setActivity] = useState([])
   const [status, setStatus] = useState('running')
+  const [source, setSource] = useState('')
   const [elapsed, setElapsed] = useState(0)
   const startRef = useRef(Date.now())
 
@@ -60,6 +61,7 @@ export default function LiveRun() {
     let es
     getRun(id).then((run) => {
       setStatus(run.status)
+      setSource(run.source)
       setCost(run.cost)
       const ps = run.prospects.map((p) => ({ name: p.name, domain: p.domain, score: p.discovery_score, reason: p.fit_reason }))
       setProspects(ps)
@@ -72,7 +74,8 @@ export default function LiveRun() {
     function openStream() {
       return streamRun(id, (ev) => {
         if (ev.type === 'discovered') {
-          setProspects(ev.prospects.map((p) => ({ name: p.name, score: p.score, reason: p.reason })))
+          if (ev.source_used) setSource(ev.source_used)
+          setProspects(ev.prospects.map((p) => ({ name: p.name, domain: p.domain, score: p.score, reason: p.reason })))
           setSteps((prev) => {
             const next = { ...prev }
             ev.prospects.forEach((p) => {
@@ -136,7 +139,7 @@ export default function LiveRun() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Your agents are on it</h1>
-          <p className="mt-1 text-sm text-muted">Run #{id} · {prospects.length} prospects</p>
+          <p className="mt-1 flex items-center gap-2 text-sm text-muted">Run #{id} · {prospects.length} prospects {source && <SourceBadge source={source} />}</p>
         </div>
         <div className="flex items-center gap-2">
           {status === 'running'
