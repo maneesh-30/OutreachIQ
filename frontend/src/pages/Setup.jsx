@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Globe, Sparkles, Check, Database, ArrowRight, Loader2, FileText } from 'lucide-react'
 import { Card, Button } from '../ui'
 import { analyzeSite, getCompany, saveCompany } from '../api'
@@ -19,7 +19,9 @@ const STAGES = [
 
 export default function Setup() {
   const { refreshCompany } = useApp()
+  const [searchParams] = useSearchParams()
   const [url, setUrl] = useState('')
+  const autoRan = useRef(false)
   const [profile, setProfile] = useState(null)
   const [icp, setIcp] = useState({})
   const [analyzing, setAnalyzing] = useState(false)
@@ -32,13 +34,17 @@ export default function Setup() {
   useEffect(() => clearTimers, [])
 
   useEffect(() => {
+    if (searchParams.get('url')) return // arriving from landing -> auto-analyze instead
     getCompany().then((c) => {
       if (c && c.company_name) { setProfile(c); setIcp(c.icp || {}); setUrl(c.source_url || '') }
     }).catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const analyze = async () => {
-    if (!url.trim()) return
+  const analyze = async (urlArg) => {
+    const target = (typeof urlArg === 'string' ? urlArg : url).trim()
+    if (!target) return
+    setUrl(target)
     setAnalyzing(true); setError(''); setSaved(false)
     setStepIdx(0)
     // advance through the real stages on estimated timing; hold on the last until done
@@ -48,7 +54,7 @@ export default function Setup() {
       setTimeout(() => setStepIdx(3), 13000),
     ]
     try {
-      const p = await analyzeSite(url.trim())
+      const p = await analyzeSite(target)
       clearTimers()
       setStepIdx(STAGES.length) // all done
       setProfile(p); setIcp(p.icp || {})
@@ -68,6 +74,13 @@ export default function Setup() {
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
   }
+
+  // auto-analyze when arriving from the landing page with ?url=
+  useEffect(() => {
+    const u = searchParams.get('url')
+    if (u && !autoRan.current) { autoRan.current = true; analyze(u) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   return (
     <div>

@@ -1,6 +1,7 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AppProvider } from './state'
 import Shell from './components/Shell'
+import Landing from './pages/Landing'
 import Setup from './pages/Setup'
 import NewRun from './pages/NewRun'
 import LiveRun from './pages/LiveRun'
@@ -12,8 +13,8 @@ export default function App() {
     <AppProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<Landing />} />
           <Route element={<Shell />}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="/setup" element={<Setup />} />
             <Route path="/new" element={<NewRun />} />
             <Route path="/live" element={<LiveRun />} />
