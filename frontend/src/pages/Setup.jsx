@@ -57,7 +57,7 @@ export default function Setup() {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && analyze()}
-            placeholder="Paste your company website — stripe.com, notion.so…"
+            placeholder="Paste your company's url"
             style={{ paddingRight: '128px' }}
           />
           <button type="button" className="kbd-btn" onClick={analyze} disabled={analyzing}
