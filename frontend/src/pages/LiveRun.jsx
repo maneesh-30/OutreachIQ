@@ -136,7 +136,7 @@ export default function LiveRun() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Your agents are on it</h1>
-          <p className="mt-1 text-sm text-muted">Run #{id} · Seed pool · {prospects.length} prospects</p>
+          <p className="mt-1 text-sm text-muted">Run #{id} · {prospects.length} prospects</p>
         </div>
         <div className="flex items-center gap-2">
           {status === 'running'

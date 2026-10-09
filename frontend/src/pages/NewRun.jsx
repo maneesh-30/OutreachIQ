@@ -19,6 +19,7 @@ export default function NewRun() {
   const { setLastRunId, company } = useApp()
   const [topN, setTopN] = useState(3)
   const [poolSize, setPoolSize] = useState(24)
+  const [source, setSource] = useState('pool')
   const [busy, setBusy] = useState(false)
 
   useEffect(() => { getPool().then((p) => setPoolSize(p.length)).catch(() => {}) }, [])
@@ -26,7 +27,7 @@ export default function NewRun() {
   const start = async () => {
     setBusy(true)
     try {
-      const { run_id } = await startRun(topN)
+      const { run_id } = await startRun(topN, source)
       setLastRunId(run_id)
       nav(`/live/${run_id}`)
     } catch (e) {
@@ -65,14 +66,20 @@ export default function NewRun() {
 
           <div className="mt-6 text-sm text-muted">Prospect source</div>
           <div className="mt-2 grid grid-cols-2 gap-3">
-            <div className="flex items-center justify-center gap-2 rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm font-medium text-accent">
+            <button onClick={() => setSource('pool')}
+              className={`flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium transition ${source === 'pool' ? 'border-accent bg-accent/10 text-accent' : 'border-border text-muted hover:border-gray-500'}`}>
               <Database size={16} /> Seed pool
-            </div>
-            <div className="flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-3 text-sm text-muted">
-              <Search size={16} /> Live search <span className="text-[10px]">SOON</span>
-            </div>
+            </button>
+            <button onClick={() => setSource('live')}
+              className={`flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium transition ${source === 'live' ? 'border-accent bg-accent/10 text-accent' : 'border-border text-muted hover:border-gray-500'}`}>
+              <Search size={16} /> Live search
+            </button>
           </div>
-          <div className="mt-2 text-xs text-muted">Seed pool uses curated companies. Live search is not available yet.</div>
+          <div className="mt-2 text-xs text-muted">
+            {source === 'pool'
+              ? 'Seed pool: 24 curated companies scored against your ICP.'
+              : 'Live search: finds real companies on the web via Apify (slower, ~1 min).'}
+          </div>
 
           <div className="mt-5 flex items-center justify-between text-sm">
             <span className="text-muted">Available pool <span className="font-semibold text-white">{poolSize} companies</span></span>
