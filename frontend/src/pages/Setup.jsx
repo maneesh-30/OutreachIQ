@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Globe, Sparkles, Check, Database, ArrowRight, Loader2 } from 'lucide-react'
+import { Globe, Check, Database, ArrowRight, Loader2 } from 'lucide-react'
 import { Card, Button } from '../ui'
 import { analyzeSite, getCompany, saveCompany } from '../api'
 import { useApp } from '../state'
@@ -57,18 +57,21 @@ export default function Setup() {
 
       <Card className="mt-6 p-6">
         <div className="text-sm font-medium">Company website</div>
-        <div className="mt-3 flex gap-3">
-          <div className="flex flex-1 items-center gap-2 rounded-lg border border-border bg-[#0d1014] px-3">
-            <Globe size={16} className="text-muted" />
-            <input value={url} onChange={(e) => setUrl(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && analyze()}
-              placeholder="https://yourcompany.com"
-              className="w-full bg-transparent py-3 text-sm outline-none" />
-          </div>
-          <Button onClick={analyze} disabled={analyzing}>
-            {analyzing ? <><Loader2 size={16} className="animate-spin" /> Analyzing…</> : <><Sparkles size={16} /> Analyze</>}
-          </Button>
-        </div>
+        <label className="search-label mt-3">
+          <Globe size={17} className="search-left-icon" />
+          <input
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && analyze()}
+            placeholder="Paste your company website — stripe.com, notion.so…"
+            style={{ paddingRight: '128px' }}
+          />
+          <button type="button" className="kbd-btn" onClick={analyze} disabled={analyzing}>
+            {analyzing
+              ? <><Loader2 size={13} className="animate-spin" /> Analyzing…</>
+              : <>Analyze <span className="opacity-60">↵</span></>}
+          </button>
+        </label>
         {error && <div className="mt-3 text-xs text-danger">Could not analyze: {error}</div>}
         {profile && !error && (
           <div className="mt-3 flex items-center gap-2 text-xs text-muted">
