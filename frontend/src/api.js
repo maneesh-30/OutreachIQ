@@ -13,6 +13,24 @@ export const startRun = (top_n) =>
     body: JSON.stringify({ top_n }),
   }).then(J)
 
+export const analyzeSite = (url) =>
+  fetch('/api/analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+  }).then(async (r) => {
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || `HTTP ${r.status}`)
+    return r.json()
+  })
+
+export const getCompany = () => fetch('/api/company').then(J)
+export const saveCompany = (profile) =>
+  fetch('/api/company', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(profile),
+  }).then(J)
+
 // SSE live stream. Returns the EventSource so callers can close it.
 export const streamRun = (id, onEvent, onEnd) => {
   const es = new EventSource(`/api/runs/${id}/stream`)
