@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { Search, ScanLine, Target, Lightbulb, Mail, Pause, CheckCircle2, Activity } from 'lucide-react'
+import { Search, ScanLine, Target, Lightbulb, Mail, Pause, CheckCircle2 } from 'lucide-react'
 import { Card, StatusChip, ScoreBadge, RunningBar, SourceBadge, RegionChip } from '../ui'
 import { getRun, streamRun } from '../api'
 import { useApp } from '../state'
@@ -131,7 +131,6 @@ export default function LiveRun() {
   const running = allStatuses.filter((s) => s === 'running').length
   const pending = allStatuses.filter((s) => s === 'pending').length
   const total = prospects.length * AGENTS.length || allStatuses.length
-  const pct = (v) => (cost.total ? Math.round((v / cost.total) * 1000) / 10 : 0)
   const mmss = `${String(Math.floor(elapsed / 60)).padStart(2, '0')}:${String(elapsed % 60).padStart(2, '0')}`
 
   return (
@@ -215,25 +214,6 @@ export default function LiveRun() {
 
         {/* right rail */}
         <div className="flex flex-col gap-5">
-          <Card className="p-5">
-            <div className="text-sm font-medium">Live cost meter</div>
-            <div className="mt-1 flex items-center gap-1 text-xs text-muted"><Activity size={12} /> Updates as agents work</div>
-            <div className="mt-3 text-4xl font-semibold">${cost.total.toFixed(3)}</div>
-            <div className="mt-4 space-y-3">
-              <div>
-                <div className="flex justify-between text-xs"><span>Azure</span><span className="font-medium">${cost.azure.toFixed(3)}</span></div>
-                <div className="mt-1 h-1.5 w-full rounded bg-white/5"><div className="h-full rounded bg-accent" style={{ width: `${pct(cost.azure)}%` }} /></div>
-                <div className="mt-0.5 text-[10px] text-muted">{pct(cost.azure)}% of spend</div>
-              </div>
-              <div>
-                <div className="flex justify-between text-xs"><span>Groq</span><span className="font-medium">${cost.groq.toFixed(3)}</span></div>
-                <div className="mt-1 h-1.5 w-full rounded bg-white/5"><div className="h-full rounded bg-success" style={{ width: `${pct(cost.groq)}%` }} /></div>
-                <div className="mt-0.5 text-[10px] text-muted">{pct(cost.groq)}% of spend</div>
-              </div>
-              <div className="flex justify-between border-t border-border pt-2 text-sm"><span>Total</span><span className="font-semibold">${cost.total.toFixed(3)}</span></div>
-            </div>
-          </Card>
-
           <Card className="p-5">
             <div className="text-sm font-medium">Activity</div>
             <div className="mt-3 space-y-3">

@@ -1,8 +1,6 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { useEffect } from 'react'
 import { SlidersHorizontal, Plus, Activity, Users, LineChart, Zap } from 'lucide-react'
 import { useApp } from '../state'
-import { listRuns } from '../api'
 import FloatingDock from './FloatingDock'
 
 const NAV = [
@@ -14,13 +12,9 @@ const NAV = [
 ]
 
 export default function Shell() {
-  const { spend, setSpend, company } = useApp()
+  const { company } = useApp()
   const loc = useLocation()
   const nav = useNavigate()
-
-  useEffect(() => {
-    listRuns().then((runs) => setSpend(runs.reduce((a, r) => a + (r.cost_total || 0), 0))).catch(() => {})
-  }, [loc.pathname, setSpend])
 
   const items = NAV.map((n) => ({
     title: n.title, icon: n.icon, dot: n.dot,
@@ -38,9 +32,6 @@ export default function Shell() {
         </div>
         <div className="flex items-center gap-3 text-sm">
           {company && <span className="text-muted">{company}</span>}
-          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
-            <span className="text-muted">Spend</span> <span className="font-semibold">${spend.toFixed(2)}</span>
-          </span>
         </div>
       </header>
 

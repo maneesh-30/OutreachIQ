@@ -5,7 +5,6 @@ import { Button } from '../ui'
 import { startRun } from '../api'
 import { useApp } from '../state'
 
-const PER = 0.3
 const SCOPES = [
   ['both', 'Nearby + Global', "Companies in your country first, then worldwide."],
   ['local', 'Nearby', "Only companies in your company's country."],
@@ -79,7 +78,7 @@ export default function NewRun({ onStarted }) {
 
       {/* action */}
       <div className="mt-10 flex items-center justify-between border-t border-white/10 pt-5">
-        <div className="text-sm text-muted">Est. ~${(topN * PER).toFixed(2)} · drafts only, never auto-sent</div>
+        <div className="text-sm text-muted">Drafts only — never auto-sent.</div>
         <Button onClick={start} disabled={busy}>
           <Play size={16} /> {busy ? 'Starting…' : 'Start run'}
         </Button>
