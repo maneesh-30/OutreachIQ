@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Globe, Check, Database, ArrowRight } from 'lucide-react'
-import { Card, Button } from '../ui'
+import { Button } from '../ui'
 import { analyzeSite, saveCompany } from '../api'
 import { useApp } from '../state'
 
@@ -92,62 +92,62 @@ export default function Setup() {
       )}
 
       {profile && !analyzing && (
-        <div className="fade-up">
-          <div className="mt-6 grid grid-cols-[1fr_360px] items-start gap-5">
-            <div className="space-y-5">
-              <Card className="p-6">
-                <h3 className="text-base font-medium">What you sell</h3>
-                <span className="mt-2 inline-block rounded-full bg-accent/10 px-2 py-0.5 text-xs text-accent">AI-extracted</span>
-                <p className="mt-3 text-sm leading-relaxed text-gray-300">{profile.what_you_sell}</p>
-              </Card>
-
-              <Card className="p-6">
-                <h3 className="text-base font-medium">Value props</h3>
-                <div className="mt-3 space-y-4">
-                  {(profile.value_props || []).map((v, i) => (
-                    <div key={i}>
-                      <div className="flex items-center gap-2 text-sm font-medium"><Check size={14} className="text-success" /> {v.title}</div>
-                      <p className="mt-1 text-sm text-muted">{v.desc}</p>
-                    </div>
-                  ))}
-                </div>
-              </Card>
+        <div className="fade-up mx-auto mt-12 max-w-3xl text-left">
+          {/* company header */}
+          <div className="flex items-end justify-between border-b border-white/10 pb-4">
+            <div>
+              <div className="text-2xl font-semibold">{profile.company_name}</div>
+              <div className="mt-1 text-sm text-muted">
+                {profile.source_url}{profile.country ? ` · ${profile.country}` : ''}
+              </div>
             </div>
-
-            <Card className="p-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-medium">ICP</h3>
-                <span className="text-xs text-muted">Editable</span>
-              </div>
-              <div className="mt-4 space-y-3">
-                {ICP_FIELDS.map(([k, label]) => (
-                  <div key={k}>
-                    <div className="text-xs text-muted">{label}</div>
-                    <input value={icp[k] || ''} onChange={(e) => setIcp({ ...icp, [k]: e.target.value })}
-                      className="mt-1 w-full rounded-lg border border-border bg-[#0d1014] px-3 py-2.5 text-sm outline-none focus:border-accent" />
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 flex items-center justify-between">
-                <span className="text-xs text-muted">Used by all 5 agents</span>
-                <Button onClick={save}>Save</Button>
-              </div>
-            </Card>
+            <span className="rounded-full bg-white/5 px-2.5 py-1 text-xs text-muted">AI-extracted</span>
           </div>
 
-          <Card className="mt-6 flex items-center justify-between p-5">
-            <div className="flex items-center gap-3">
-              <Database size={20} className="text-accent" />
-              <div>
-                <div className="font-medium">Knowledge base</div>
-                <div className="text-xs text-muted">Rebuilt from {profile.company_name}'s website · grounds every email</div>
-              </div>
-            </div>
-            <span className="rounded-full bg-success/10 px-2.5 py-1 text-xs text-success">● Ready</span>
-          </Card>
+          {/* what you sell */}
+          <section className="mt-9">
+            <div className="text-[11px] font-medium uppercase tracking-wider text-muted">What you sell</div>
+            <p className="mt-2 text-lg leading-relaxed text-gray-200">{profile.what_you_sell}</p>
+          </section>
 
-          <div className="mt-5 flex items-center justify-between">
-            <span className="text-sm text-muted">Profile ready. Your agents can now find matching companies.</span>
+          {/* value props */}
+          <section className="mt-10">
+            <div className="text-[11px] font-medium uppercase tracking-wider text-muted">Value props</div>
+            <div className="mt-4 grid grid-cols-3 gap-x-8 gap-y-6">
+              {(profile.value_props || []).map((v, i) => (
+                <div key={i} className="border-t border-white/10 pt-3">
+                  <div className="text-sm font-medium">{v.title}</div>
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted">{v.desc}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ICP */}
+          <section className="mt-10">
+            <div className="flex items-center justify-between">
+              <div className="text-[11px] font-medium uppercase tracking-wider text-muted">Ideal customer profile</div>
+              <span className="text-xs text-muted">Editable · used by all 5 agents</span>
+            </div>
+            <div className="mt-4 divide-y divide-white/10 border-y border-white/10">
+              {ICP_FIELDS.map(([k, label]) => (
+                <div key={k} className="flex items-center gap-4 py-2.5">
+                  <div className="w-40 shrink-0 text-sm text-muted">{label}</div>
+                  <input value={icp[k] || ''} onChange={(e) => setIcp({ ...icp, [k]: e.target.value })}
+                    className="flex-1 bg-transparent text-sm text-gray-200 outline-none placeholder:text-muted" />
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Button variant="ghost" onClick={save}>Save profile</Button>
+            </div>
+          </section>
+
+          {/* footer: KB + run */}
+          <div className="mt-10 flex items-center justify-between border-t border-white/10 pt-5">
+            <div className="flex items-center gap-2 text-sm text-muted">
+              <Database size={16} /> Knowledge base ready · grounds every email
+            </div>
             <Link to="/new"><Button>Create a new run <ArrowRight size={16} /></Button></Link>
           </div>
         </div>
