@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Search, ScanLine, Target, Lightbulb, Mail, Pause, CheckCircle2 } from 'lucide-react'
-import { Card, StatusChip, ScoreBadge, RunningBar, SourceBadge, RegionChip } from '../ui'
+import { Button, SourceBadge, RegionChip } from '../ui'
 import { getRun, streamRun } from '../api'
 import { useApp } from '../state'
 
@@ -126,12 +126,7 @@ export default function LiveRun() {
     )
   }
 
-  const allStatuses = Object.values(steps).flatMap((m) => AGENTS.map((a) => m[a.key]?.status || 'pending'))
-  const done = allStatuses.filter((s) => s === 'done').length
-  const running = allStatuses.filter((s) => s === 'running').length
-  const pending = allStatuses.filter((s) => s === 'pending').length
-  const total = prospects.length * AGENTS.length || allStatuses.length
-  const mmss = `${String(Math.floor(elapsed / 60)).padStart(2, '0')}:${String(elapsed % 60).padStart(2, '0')}`
+  const scoreColor = (v) => (v >= 85 ? 'text-success' : v >= 65 ? 'text-warn' : 'text-muted')
 
   return (
     <div>
@@ -148,89 +143,58 @@ export default function LiveRun() {
         </div>
       </div>
 
-      {/* summary strip */}
-      <Card className="mt-5 flex items-center justify-between px-5 py-3.5">
-        <div className="text-sm font-medium">{done} of {total} agents complete</div>
-        <div className="flex items-center gap-2 text-xs">
-          <span className="rounded-full bg-success/10 px-2.5 py-1 text-success">{done} done</span>
-          <span className="rounded-full bg-warn/10 px-2.5 py-1 text-warn">{running} running</span>
-          <span className="rounded-full bg-white/5 px-2.5 py-1 text-muted">{pending} pending</span>
-          <span className="ml-2 text-muted">Elapsed {mmss}</span>
-        </div>
-      </Card>
+      {/* matched companies + per-company progress */}
+      <div className="mt-6">
+        <h2 className="mb-2 text-sm font-medium text-muted">
+          {prospects.length ? `${prospects.length} companies matched` : 'Discovering prospects…'}
+        </h2>
 
-      <div className="mt-6 grid grid-cols-[minmax(0,1fr)_300px] gap-6">
-        <div className="min-w-0">
-          {/* discovery */}
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-medium text-muted">Discovery</h2>
-            {prospects.length > 0 && <span className="flex items-center gap-1 text-xs text-success"><CheckCircle2 size={13} /> {prospects.length} companies matched</span>}
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            {prospects.map((p) => (
-              <Card key={p.name} className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="min-w-0">
-                    <div className="truncate font-medium">{p.name}</div>
-                    <div className="truncate text-xs text-muted">{p.domain || '—'}</div>
-                    <div className="mt-1"><RegionChip region={p.region} country={p.country} /></div>
-                  </div>
-                  <ScoreBadge value={p.score} />
-                </div>
-                <div className="mt-3 line-clamp-2 text-xs text-muted">{p.reason}</div>
-              </Card>
-            ))}
-            {prospects.length === 0 && <div className="col-span-3 py-8 text-center text-sm text-muted">Discovering prospects…</div>}
-          </div>
-
-          {/* pipelines */}
+        <div className="divide-y divide-white/10 border-y border-white/10">
           {prospects.map((p) => {
             const m = steps[p.name] || {}
-            const pdone = AGENTS.filter((a) => m[a.key]?.status === 'done').length
+            const doneCount = AGENTS.filter((a) => m[a.key]?.status === 'done').length
+            const runningAgent = AGENTS.find((a) => m[a.key]?.status === 'running')
+            const allDone = doneCount === AGENTS.length
             return (
-              <div key={p.name} className="mt-7">
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-sm"><span className="font-medium">{p.name}</span> <span className="text-muted">· {pdone}/{AGENTS.length} complete</span></h3>
-                  <Link to={`/prospects/${id}`} className="text-xs text-accent hover:underline">View prospect →</Link>
+              <div key={p.name} className="flex items-center gap-4 py-4">
+                <div className="w-48 shrink-0">
+                  <div className="truncate font-medium">{p.name}</div>
+                  <div className="flex items-center gap-2 truncate text-xs text-muted">
+                    {p.domain || '—'}<RegionChip region={p.region} country={p.country} />
+                  </div>
                 </div>
-                <div className="grid grid-cols-5 gap-3">
-                  {AGENTS.map(({ key, name, icon: Icon }) => {
-                    const st = m[key]?.status || 'pending'
-                    const pv = st === 'done' ? preview(key, m[key]?.out) : WAIT[key]
+
+                <div className={`w-10 shrink-0 text-center text-lg font-semibold ${scoreColor(p.score)}`}>{p.score}</div>
+
+                {/* 5-segment stepper */}
+                <div className="flex flex-1 items-center gap-1.5">
+                  {AGENTS.map((a) => {
+                    const st = m[a.key]?.status || 'pending'
                     return (
-                      <Card key={key} className={`p-3.5 ${st === 'running' ? 'border-warn/60' : ''}`}>
-                        <div className="flex items-center gap-2 text-sm"><Icon size={15} className="text-muted" /><span className="font-medium">{name}</span></div>
-                        <div className="mt-2"><StatusChip status={st} /></div>
-                        <div className="mt-2 line-clamp-2 text-xs text-muted">{pv}</div>
-                        {st === 'running' && <RunningBar />}
-                      </Card>
+                      <span key={a.key} title={a.name}
+                        className={`h-2 flex-1 rounded-full ${st === 'done' ? 'bg-success' : st === 'running' ? 'bg-warn animate-pulse-dot' : 'bg-white/10'}`} />
                     )
                   })}
                 </div>
+
+                <div className="w-28 shrink-0 text-right text-xs">
+                  {allDone ? <span className="text-success">Email ready</span>
+                    : runningAgent ? <span className="text-warn">{runningAgent.name}…</span>
+                      : <span className="text-muted">Queued</span>}
+                </div>
+
+                <Link to={`/prospects/${id}`} className="shrink-0 text-xs text-accent hover:underline">View →</Link>
               </div>
             )
           })}
+          {prospects.length === 0 && <div className="py-12 text-center text-sm text-muted">Finding companies on the web…</div>}
         </div>
 
-        {/* right rail */}
-        <div className="flex flex-col gap-5">
-          <Card className="p-5">
-            <div className="text-sm font-medium">Activity</div>
-            <div className="mt-3 space-y-3">
-              {activity.length === 0 && <div className="text-xs text-muted">Waiting for agent activity…</div>}
-              {activity.map((a, i) => (
-                <div key={i} className="text-xs">
-                  <div className="text-muted">{a.t}</div>
-                  <div><span className="font-medium">{a.p}</span> <span className="text-muted">{a.msg}</span></div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {status !== 'running' && (
-            <Link to={`/prospects/${id}`} className="rounded-lg bg-accent px-4 py-2.5 text-center text-sm font-medium text-white">Review prospects →</Link>
-          )}
-        </div>
+        {status !== 'running' && prospects.length > 0 && (
+          <div className="mt-6 flex justify-end">
+            <Link to={`/prospects/${id}`}><Button>Review prospects →</Button></Link>
+          </div>
+        )}
       </div>
     </div>
   )
