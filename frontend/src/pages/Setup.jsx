@@ -93,7 +93,7 @@ export default function Setup() {
 
       {profile && !analyzing && (
         <div className="fade-up">
-          <div className="mt-6 grid grid-cols-3 gap-5">
+          <div className="mt-6 grid grid-cols-3 items-start gap-5">
             <Card className="p-6">
               <h3 className="text-base font-medium">What you sell</h3>
               <span className="mt-2 inline-block rounded-full bg-accent/10 px-2 py-0.5 text-xs text-accent">AI-extracted</span>
