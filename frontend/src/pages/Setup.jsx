@@ -93,24 +93,26 @@ export default function Setup() {
 
       {profile && !analyzing && (
         <div className="fade-up">
-          <div className="mt-6 grid grid-cols-3 items-start gap-5">
-            <Card className="p-6">
-              <h3 className="text-base font-medium">What you sell</h3>
-              <span className="mt-2 inline-block rounded-full bg-accent/10 px-2 py-0.5 text-xs text-accent">AI-extracted</span>
-              <p className="mt-3 text-sm leading-relaxed text-gray-300">{profile.what_you_sell}</p>
-            </Card>
+          <div className="mt-6 grid grid-cols-[1fr_360px] items-start gap-5">
+            <div className="space-y-5">
+              <Card className="p-6">
+                <h3 className="text-base font-medium">What you sell</h3>
+                <span className="mt-2 inline-block rounded-full bg-accent/10 px-2 py-0.5 text-xs text-accent">AI-extracted</span>
+                <p className="mt-3 text-sm leading-relaxed text-gray-300">{profile.what_you_sell}</p>
+              </Card>
 
-            <Card className="p-6">
-              <h3 className="text-base font-medium">Value props</h3>
-              <div className="mt-3 space-y-4">
-                {(profile.value_props || []).map((v, i) => (
-                  <div key={i}>
-                    <div className="flex items-center gap-2 text-sm font-medium"><Check size={14} className="text-success" /> {v.title}</div>
-                    <p className="mt-1 text-sm text-muted">{v.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </Card>
+              <Card className="p-6">
+                <h3 className="text-base font-medium">Value props</h3>
+                <div className="mt-3 space-y-4">
+                  {(profile.value_props || []).map((v, i) => (
+                    <div key={i}>
+                      <div className="flex items-center gap-2 text-sm font-medium"><Check size={14} className="text-success" /> {v.title}</div>
+                      <p className="mt-1 text-sm text-muted">{v.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
 
             <Card className="p-6">
               <div className="flex items-center justify-between">
