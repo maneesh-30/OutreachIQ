@@ -17,7 +17,8 @@ HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
 }
-SUBPATHS = ["about", "product", "products", "platform", "features", "pricing", "solutions", "customers"]
+SUBPATHS = ["about", "about-us", "contact", "contact-us", "product", "products",
+            "platform", "features", "pricing", "solutions", "customers", "company"]
 MAX_CHARS = 12000
 TIMEOUT = 12
 

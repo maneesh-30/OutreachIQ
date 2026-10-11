@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Globe, Check, Database, ArrowRight } from 'lucide-react'
 import { Button } from '../ui'
-import { analyzeSite, saveCompany } from '../api'
+import { analyzeSite, getCompany, saveCompany } from '../api'
 import { useApp } from '../state'
 
 const ICP_FIELDS = [
@@ -18,6 +18,13 @@ export default function Setup() {
   const [analyzing, setAnalyzing] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+
+  // show the active company's brief (persists across navigation); leave the bar empty
+  useEffect(() => {
+    getCompany().then((c) => {
+      if (c && c.company_name) { setProfile(c); setIcp(c.icp || {}) }
+    }).catch(() => {})
+  }, [])
 
   const analyze = async () => {
     if (!url.trim()) return

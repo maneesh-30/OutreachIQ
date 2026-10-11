@@ -22,8 +22,11 @@ PROMPT = """From the company website text below, produce a JSON profile of THIS 
     "geography": str, "signals": str, "anti_signals": str
   }
 }
-Infer HQ country from address, footer, phone code, or "based in" text. Infer the
-ICP (who they likely sell TO) from what they do. Be concise and specific.
+Infer the HQ country carefully from ANY of: a street address, the footer, a phone
+country code (e.g. +91 = India, +44 = UK), the currency on pricing (₹/INR = India,
+£ = UK, € = EU), "based in"/"headquartered in" text, or an obvious regional focus.
+If genuinely unknown, use "" for country and country_code (do NOT guess the US).
+Infer the ICP (who they likely sell TO) from what they do. Be concise and specific.
 
 WEBSITE TEXT:
 """
@@ -54,12 +57,16 @@ def analyze(url: str, ledger: Ledger | None = None) -> dict:
                     max_tokens=900)
     profile = _json(raw)
     profile.setdefault("company_name", site["title"])
-    # fill country from TLD if the model couldn't find one
+    # fill country from TLD if the model couldn't find one (leave blank if still unknown)
     if not profile.get("country_code"):
         from urllib.parse import urlparse
         country, code = _tld_fallback(urlparse(site["url"]).netloc)
-        profile["country"] = profile.get("country") or country or "United States"
-        profile["country_code"] = code or "us"
+        if code:
+            profile["country"] = profile.get("country") or country
+            profile["country_code"] = code
+        else:
+            profile.setdefault("country", "")
+            profile["country_code"] = ""
     profile["source_url"] = site["url"]
     profile["_site_text"] = site["text"]
     profile["_pages_fetched"] = site["pages_fetched"]
