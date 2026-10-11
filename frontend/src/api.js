@@ -23,6 +23,15 @@ export const analyzeSite = (url) =>
     return r.json()
   })
 
+export const uploadDocs = (fileList) => {
+  const fd = new FormData()
+  Array.from(fileList).forEach((f) => fd.append('files', f))
+  return fetch('/api/company/docs', { method: 'POST', body: fd }).then(async (r) => {
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || `HTTP ${r.status}`)
+    return r.json()
+  })
+}
+
 export const getCompany = () => fetch('/api/company').then(J)
 export const saveCompany = (profile) =>
   fetch('/api/company', {

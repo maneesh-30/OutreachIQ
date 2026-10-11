@@ -13,7 +13,7 @@ import json
 import queue
 import threading
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
@@ -23,7 +23,8 @@ import orchestrator
 from prospector import load_pool
 from router import Ledger
 from analyzer import analyze
-from kb_build import build_from_profile
+from kb_build import build_from_profile, _load_state
+from config import foundry_client
 import company as companydb
 
 app = FastAPI(title="OutreachIQ API")
@@ -236,3 +237,25 @@ def update_company(payload: dict):
     cur.update(payload or {})
     companydb.save_company(cur)
     return cur
+
+
+@app.post("/api/company/docs")
+async def upload_docs(files: list[UploadFile] = File(...)):
+    vs_id = _load_state().get("vector_store_id")
+    if not vs_id:
+        raise HTTPException(400, "analyze a company first")
+    client = foundry_client()
+    added = []
+    for f in files:
+        data = await f.read()
+        if not data:
+            continue
+        try:
+            client.vector_stores.files.upload_and_poll(vector_store_id=vs_id, file=(f.filename, data))
+            added.append(f.filename)
+        except Exception as e:  # noqa: BLE001
+            raise HTTPException(500, f"could not add {f.filename}: {e}")
+    prof = companydb.load_company() or {}
+    prof["docs"] = (prof.get("docs") or []) + added
+    companydb.save_company(prof)
+    return {"docs": prof["docs"], "added": added}

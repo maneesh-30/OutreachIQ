@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Globe, Check, Database, ArrowRight } from 'lucide-react'
+import { Globe, Check, Database, ArrowRight, FileText, Upload } from 'lucide-react'
 import { Button } from '../ui'
-import { analyzeSite, getCompany, saveCompany } from '../api'
+import { analyzeSite, getCompany, saveCompany, uploadDocs } from '../api'
 import { useApp } from '../state'
 
 const ICP_FIELDS = [
@@ -18,20 +18,37 @@ export default function Setup() {
   const [analyzing, setAnalyzing] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const [docs, setDocs] = useState([])
+  const [uploading, setUploading] = useState(false)
 
   // show the active company's brief (persists across navigation); leave the bar empty
   useEffect(() => {
     getCompany().then((c) => {
-      if (c && c.company_name) { setProfile(c); setIcp(c.icp || {}) }
+      if (c && c.company_name) { setProfile(c); setIcp(c.icp || {}); setDocs(c.docs || []) }
     }).catch(() => {})
   }, [])
+
+  const onDocs = async (e) => {
+    const files = e.target.files
+    if (!files?.length) return
+    setUploading(true)
+    try {
+      const res = await uploadDocs(files)
+      setDocs(res.docs || [])
+    } catch (err) {
+      alert('Upload failed: ' + err.message)
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
 
   const analyze = async () => {
     if (!url.trim()) return
     setAnalyzing(true); setError(''); setSaved(false)
     try {
       const p = await analyzeSite(url.trim())
-      setProfile(p); setIcp(p.icp || {})
+      setProfile(p); setIcp(p.icp || {}); setDocs([])
       refreshCompany()
     } catch (e) {
       setError(String(e.message || e))
@@ -148,6 +165,27 @@ export default function Setup() {
             <div className="mt-4 flex justify-end">
               <Button variant="ghost" onClick={save}>Save profile</Button>
             </div>
+          </section>
+
+          {/* your documents */}
+          <section className="mt-10">
+            <div className="flex items-center justify-between">
+              <div className="text-[11px] font-medium uppercase tracking-wider text-muted">Your documents</div>
+              <label className={`flex cursor-pointer items-center gap-1.5 text-xs text-accent hover:underline ${uploading ? 'pointer-events-none opacity-60' : ''}`}>
+                <Upload size={13} /> {uploading ? 'Uploading…' : 'Upload docs'}
+                <input type="file" multiple accept=".pdf,.txt,.md,.docx" className="hidden" onChange={onDocs} />
+              </label>
+            </div>
+            <p className="mt-2 text-xs text-muted">Add case studies, decks or product docs to ground emails in proof your website doesn't show. PDF, TXT, MD, DOCX.</p>
+            {docs.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {docs.map((d, i) => (
+                  <span key={i} className="flex items-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-gray-200">
+                    <FileText size={12} className="text-muted" /> {d}
+                  </span>
+                ))}
+              </div>
+            )}
           </section>
 
           {/* footer: KB + run */}
