@@ -1,24 +1,20 @@
 """Fetch a company's website and extract readable text.
 
-Uses Apify's website-content-crawler, which renders JavaScript — so modern
-single-page apps (React/Vue sites) are read correctly, unlike a plain HTTP GET.
-Returns homepage + a couple of key pages, concatenated and capped.
+Uses a local headless Chromium (Playwright) so JavaScript is rendered — modern
+single-page company sites (React/Vue) read correctly — and it's fast and reliable
+(no external crawler latency). Reads the homepage plus a couple of key pages.
 """
 from __future__ import annotations
 
-import os
-import time
-from urllib.parse import urlparse
+import re
+from urllib.parse import urljoin, urlparse
 
-import requests
-from dotenv import load_dotenv
-
-load_dotenv()
-
-APIFY_TOKEN = os.environ.get("APIFY_TOKEN", "")
-ACTOR = "apify~website-content-crawler"
-ENDPOINT = f"https://api.apify.com/v2/acts/{ACTOR}/run-sync-get-dataset-items"
+SUBPATHS = ["about", "pricing"]
 MAX_CHARS = 9000
+UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/125.0 Safari/537.36")
+NAV_TIMEOUT = 15000   # ms per page
+IDLE_TIMEOUT = 4000   # ms extra wait for SPA content
 
 
 def _normalize(url: str) -> str:
@@ -27,58 +23,73 @@ def _normalize(url: str) -> str:
     return url.rstrip("/")
 
 
+def _clean(text: str) -> str:
+    return re.sub(r"\s+", " ", text or "").strip()
+
+
 def fetch_site(url: str) -> dict:
-    """Return {url, title, text, pages_fetched}."""
+    from playwright.sync_api import sync_playwright
+
     base = _normalize(url)
-    if not APIFY_TOKEN:
-        raise RuntimeError("APIFY_TOKEN not set")
-
-    body = {
-        "startUrls": [{"url": base}],
-        "crawlerType": "playwright:adaptive",  # renders JS; adaptive = fast when possible
-        "maxCrawlPages": 3,
-        "maxCrawlDepth": 1,
-        "maxResults": 3,
-        "readableTextCharThreshold": 50,
-        "proxyConfiguration": {"useApifyProxy": True},
-    }
-    items = None
-    last_kind = ""
-    for attempt in range(2):
-        try:
-            r = requests.post(f"{ENDPOINT}?token={APIFY_TOKEN}", json=body, timeout=180)
-            r.raise_for_status()
-            items = r.json()
-            break
-        except requests.exceptions.ConnectionError:
-            last_kind = "network"
-        except requests.exceptions.Timeout:
-            last_kind = "timeout"
-        except Exception:  # noqa: BLE001
-            last_kind = "crawler"
-        if attempt == 0:
-            time.sleep(1.5)
-    if items is None:
-        if last_kind == "network":
-            raise RuntimeError("couldn't reach the web crawler — check your internet connection and try again")
-        if last_kind == "timeout":
-            raise RuntimeError("the site took too long to read — try again")
-        raise RuntimeError("couldn't read this site right now — try again")
-
     host = urlparse(base).netloc
     texts, title, pages = [], host, 0
-    for it in items:
-        t = (it.get("text") or "").strip()
-        if t:
-            texts.append(t)
-            pages += 1
-        if title == host:
-            title = ((it.get("metadata") or {}).get("title") or title)
+
+    def render(page, u: str) -> str:
+        page.goto(u, wait_until="domcontentloaded", timeout=NAV_TIMEOUT)
+        try:
+            page.wait_for_load_state("networkidle", timeout=IDLE_TIMEOUT)
+        except Exception:
+            pass
+        return _clean(page.evaluate("() => document.body ? document.body.innerText : ''"))
+
+    with sync_playwright() as pw:
+        # use the system-installed Google Chrome (no Playwright browser download)
+        try:
+            browser = pw.chromium.launch(headless=True, channel="chrome")
+        except Exception:
+            browser = pw.chromium.launch(headless=True)
+        ctx = browser.new_context(user_agent=UA)
+        page = ctx.new_page()
+        try:
+            # homepage (with a www toggle retry)
+            home = ""
+            for cand in (base, _www_toggle(base)):
+                try:
+                    home = render(page, cand)
+                    if len(home) > 50:
+                        base = cand.rstrip("/"); host = urlparse(base).netloc
+                        title = page.title() or host
+                        break
+                except Exception:
+                    continue
+            if len(home) > 50:
+                texts.append(home); pages += 1
+
+            # a couple of key subpages
+            for sub in SUBPATHS:
+                if sum(len(t) for t in texts) >= MAX_CHARS:
+                    break
+                u = urljoin(base + "/", sub)
+                if urlparse(u).netloc != host:
+                    continue
+                try:
+                    t = render(page, u)
+                    if len(t) > 200:
+                        texts.append(t); pages += 1
+                except Exception:
+                    pass
+        finally:
+            browser.close()
 
     text = " ".join(texts)[:MAX_CHARS]
     if len(text) < 50:
-        raise RuntimeError(f"{base} returned no readable content (site may block crawlers)")
+        raise RuntimeError("couldn't read this site (it may block automated browsers) — try another URL")
     return {"url": base, "title": title, "text": text, "pages_fetched": pages}
+
+
+def _www_toggle(base: str) -> str:
+    scheme, rest = base.split("://", 1)
+    return f"{scheme}://www.{rest}" if not rest.startswith("www.") else f"{scheme}://{rest[4:]}"
 
 
 if __name__ == "__main__":

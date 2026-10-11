@@ -50,11 +50,16 @@ def _tld_fallback(domain: str):
 
 
 def analyze(url: str, ledger: Ledger | None = None) -> dict:
+    import time
     ledger = ledger or Ledger()
+    t0 = time.time()
     site = fetch_site(url)
+    t1 = time.time()
     raw = ask_smart(PROMPT + site["text"], agent="self_analyzer", ledger=ledger,
                     system="You are a precise B2B analyst. Output only JSON.",
                     max_tokens=900)
+    t2 = time.time()
+    print(f"[analyze] scrape={t1-t0:.1f}s  llm={t2-t1:.1f}s  ({site['pages_fetched']} pages)")
     profile = _json(raw)
     profile.setdefault("company_name", site["title"])
     # fill country from TLD if the model couldn't find one (leave blank if still unknown)

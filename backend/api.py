@@ -225,7 +225,9 @@ def analyze_site(payload: dict):
     except Exception as e:  # noqa: BLE001
         raise HTTPException(502, str(e) or "could not analyze this site")
     try:
+        _kb0 = dt.datetime.now()
         build_from_profile(profile)           # rebuild KB from the scraped profile
+        print(f"[analyze] kb_rebuild={(dt.datetime.now()-_kb0).total_seconds():.1f}s")
     except Exception as e:  # noqa: BLE001
         raise HTTPException(500, f"analyzed, but KB rebuild failed: {e}")
     profile.pop("_site_text", None)
