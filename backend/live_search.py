@@ -20,18 +20,20 @@ from router import ask_cheap, Ledger
 from prospector import _json_array
 
 APIFY_TOKEN = os.environ.get("APIFY_TOKEN", "")
+SERPER_KEY = os.environ.get("SERPER_API_KEY", "")
 ACTOR = "apify~google-search-scraper"
 ENDPOINT = f"https://api.apify.com/v2/acts/{ACTOR}/run-sync-get-dataset-items"
 
 
 def generate_queries(icp: str, ledger: Ledger, n: int = 3, location: str = "") -> list[str]:
-    loc = f" located in {location}" if location else ""
+    loc = f" in {location}" if location else ""
     prompt = (
         f"We sell to companies matching this ICP:\n{icp}\n\n"
-        f"Write {n} plain Google search queries that surface LISTS of REAL individual "
+        f"Write {n} plain web-search queries that surface LISTS of REAL individual "
         f"companies{loc} that fit this ICP as potential CUSTOMERS. Rules: natural phrasing, "
-        "NO quotation marks, NO boolean operators, 4-8 words each. "
-        f'Prefer forms like "fast growing <industry> companies{loc}". '
+        "NO quotation marks, NO boolean operators, 4-8 words each. Avoid vague adjectives "
+        "like 'fast' or 'best'. "
+        f'Prefer forms like "list of <industry> companies{loc}" or "<segment> startups{loc}". '
         "Return ONLY a JSON array of query strings."
     )
     arr = _json_array(ask_cheap(prompt, agent="query_gen", ledger=ledger, max_tokens=300))
@@ -39,19 +41,81 @@ def generate_queries(icp: str, ledger: Ledger, n: int = 3, location: str = "") -
     return qs or [f"fast growing B2B companies{loc}"]
 
 
-def apify_search(queries: list[str], country_code: str = "") -> list[dict]:
+UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/125.0 Safari/537.36")
+
+
+def _bing_one(query: str, cc: str) -> list[dict]:
+    from bs4 import BeautifulSoup
+    try:
+        r = requests.get("https://www.bing.com/search",
+                         params={"q": query, "count": 10, "cc": cc or "us", "setlang": "en"},
+                         headers={"User-Agent": UA, "Accept-Language": "en-US,en;q=0.9"},
+                         timeout=12)
+        if r.status_code != 200:
+            return []
+        soup = BeautifulSoup(r.text, "lxml")
+        out = []
+        for li in soup.select("li.b_algo")[:10]:
+            a = li.select_one("h2 a")
+            if not a:
+                continue
+            cite = li.select_one("cite")
+            url = cite.get_text(" ", strip=True) if cite else (a.get("href") or "")
+            cap = li.select_one(".b_caption p") or li.select_one("p")
+            out.append({"title": a.get_text(" ", strip=True), "url": url,
+                        "description": cap.get_text(" ", strip=True) if cap else ""})
+        return out
+    except Exception:
+        return []
+
+
+def _apify_google(queries: list[str], country_code: str = "") -> list[dict]:
     if not APIFY_TOKEN:
-        raise RuntimeError("APIFY_TOKEN not set")
+        return []
     body = {"queries": "\n".join(queries), "resultsPerPage": 10, "maxPagesPerQuery": 1}
     if country_code:
         body["countryCode"] = country_code
-    r = requests.post(f"{ENDPOINT}?token={APIFY_TOKEN}", json=body, timeout=150)
-    r.raise_for_status()
-    results = []
+    try:
+        r = requests.post(f"{ENDPOINT}?token={APIFY_TOKEN}", json=body, timeout=150)
+        r.raise_for_status()
+    except Exception:
+        return []
+    out = []
     for serp in r.json():
         for o in serp.get("organicResults", []):
-            results.append({"title": o.get("title", ""), "url": o.get("url", ""),
-                            "description": o.get("description", "")})
+            out.append({"title": o.get("title", ""), "url": o.get("url", ""),
+                        "description": o.get("description", "")})
+    return out
+
+
+def web_search(queries: list[str], country_code: str = "") -> list[dict]:
+    """Search for prospect lists. Prefers Serper (fast Google SERP API) when a key
+    is set, otherwise falls back to the Apify Google Search Scraper (slower)."""
+    if SERPER_KEY:
+        return _serper(queries, country_code)
+    return _apify_google(queries, country_code)
+
+
+def _serper(queries: list[str], country_code: str = "") -> list[dict]:
+    """Google results via serper.dev — fast (~1-2s). Needs SERPER_API_KEY."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    def one(q):
+        try:
+            r = requests.post("https://google.serper.dev/search",
+                              headers={"X-API-KEY": SERPER_KEY, "Content-Type": "application/json"},
+                              json={"q": q, "gl": country_code or "us", "num": 10}, timeout=15)
+            r.raise_for_status()
+            return [{"title": o.get("title", ""), "url": o.get("link", ""),
+                     "description": o.get("snippet", "")} for o in r.json().get("organic", [])]
+        except Exception:
+            return []
+
+    results = []
+    with ThreadPoolExecutor(max_workers=3) as ex:
+        for rs in ex.map(one, queries):
+            results.extend(rs)
     return results
 
 
@@ -84,7 +148,7 @@ def extract_companies(results: list[dict], icp: str, ledger: Ledger, want: int,
 def _search_tag(icp, ledger, want, region, location, country_code):
     try:
         queries = generate_queries(icp, ledger, location=location)
-        results = apify_search(queries, country_code=country_code)
+        results = web_search(queries, country_code=country_code)
         if not results:
             return []
         comps = extract_companies(results, icp, ledger, want, hint_country=location)

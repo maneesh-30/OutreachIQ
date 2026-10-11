@@ -59,8 +59,11 @@ def run_pipeline(prospect: dict, ledger: Ledger, emit=_noop, verbose: bool = Tru
 def run_batch(top_n: int = 3, emit=_noop, source: str = "pool", scope: str = "both") -> dict:
     ledger = Ledger()
     emit({"type": "discovery_start", "top_n": top_n})
+    import time
     print(f"Discovering top {top_n} prospects (source={source}, scope={scope})...")
+    _td = time.time()
     ranked, source_used = discover(top_n=top_n, ledger=ledger, source=source, scope=scope)
+    print(f"[run] discovery={time.time()-_td:.1f}s")
     emit({"type": "discovered", "source_used": source_used,
           "prospects": [{"name": r["prospect"]["name"], "domain": r["prospect"].get("domain", ""),
                          "country": r["prospect"].get("country", ""),
@@ -70,7 +73,9 @@ def run_batch(top_n: int = 3, emit=_noop, source: str = "pool", scope: str = "bo
 
     results = []
     for r in ranked:
+        _tp = time.time()
         res = run_pipeline(r["prospect"], ledger, emit=emit)
+        print(f"[run] prospect {r['prospect']['name']}={time.time()-_tp:.1f}s")
         res["discovery_score"] = r["score"]
         results.append(res)
 
