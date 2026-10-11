@@ -28,6 +28,7 @@ class Run(Base):
     __tablename__ = "runs"
     id: Mapped[int] = mapped_column(primary_key=True)
     top_n: Mapped[int] = mapped_column(Integer)
+    company: Mapped[str] = mapped_column(String(200), default="")  # the company this run was for
     source: Mapped[str] = mapped_column(String(30), default="pool")  # pool | live | live→pool (fallback)
     status: Mapped[str] = mapped_column(String(20), default="running")  # running|done|error
     error: Mapped[str | None] = mapped_column(Text, nullable=True)

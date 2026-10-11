@@ -25,6 +25,7 @@ export default function Dashboard() {
   const fits = prospects.map((p) => p.fit_score).filter((v) => v != null)
   const avgFit = fits.length ? Math.round(fits.reduce((a, b) => a + b, 0) / fits.length) : 0
   const countByRun = Object.fromEntries(details.map((d) => [d.id, d.prospects.length]))
+  const companyByRun = Object.fromEntries(runs.map((r) => [r.id, r.company]))
 
   const topProspects = [...prospects]
     .filter((p) => p.fit_score != null)
@@ -71,6 +72,9 @@ export default function Dashboard() {
                     <div className="flex items-center gap-2 truncate text-xs text-muted">{p.domain || '—'}<RegionChip region={p.region} country={p.country} /></div>
                   </div>
                   <div className={`w-12 text-center text-lg font-semibold ${scoreColor(p.fit_score)}`}>{p.fit_score}</div>
+                  <div className="w-40 shrink-0 truncate text-xs text-muted">
+                    {companyByRun[p.runId] ? <>for <span className="text-gray-300">{companyByRun[p.runId]}</span></> : `Run #${p.runId}`}
+                  </div>
                   <div className="flex-1 truncate text-sm text-muted">{p.fit_reason}</div>
                   <span className="shrink-0 text-xs text-accent">
                     {p.email ? 'View email' : p.status === 'done' ? 'View' : 'In progress'} →

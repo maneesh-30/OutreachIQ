@@ -129,8 +129,9 @@ def start_run(payload: dict | None = None):
     top_n = int((payload or {}).get("top_n", 3))
     source = (payload or {}).get("source", "pool")
     scope = (payload or {}).get("scope", "both")
+    comp = (companydb.load_company() or {}).get("company_name", "")
     with Session() as s:
-        run = Run(top_n=top_n, status="running")
+        run = Run(top_n=top_n, status="running", company=comp)
         s.add(run)
         s.commit()
         run_id = run.id
@@ -145,6 +146,7 @@ def list_runs():
     with Session() as s:
         runs = s.query(Run).order_by(Run.id.desc()).all()
         return [{"id": r.id, "top_n": r.top_n, "status": r.status, "source": r.source,
+                 "company": r.company,
                  "cost_total": round(r.cost_azure + r.cost_cheap, 6),
                  "created_at": r.created_at.isoformat()} for r in runs]
 
@@ -172,7 +174,7 @@ def get_run(run_id: int):
             })
         return {
             "id": run.id, "top_n": run.top_n, "status": run.status, "error": run.error,
-            "source": run.source,
+            "source": run.source, "company": run.company,
             "cost": {"azure": run.cost_azure, "groq": run.cost_cheap,
                      "total": round(run.cost_azure + run.cost_cheap, 6)},
             "prospects": prospects,
