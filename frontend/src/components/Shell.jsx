@@ -36,8 +36,10 @@ export default function Shell() {
       </header>
 
       {/* content */}
-      <main className="mx-auto w-[min(1100px,94vw)] flex-1 overflow-auto pb-28">
-        <Outlet />
+      <main className="flex-1 overflow-auto pb-28">
+        <div className="mx-auto w-[min(1100px,94vw)]">
+          <Outlet />
+        </div>
       </main>
 
       {/* floating dock */}
