@@ -93,11 +93,19 @@ def hook_finder(prospect: dict, facts: dict, ledger: Ledger) -> str:
 
 def email_drafter(prospect: dict, pains: dict, hook: str, ledger: Ledger) -> dict:
     """KB-grounded: write the outreach email in OUR voice (sample emails in KB)."""
+    import company as companydb
+    prof = companydb.load_company() or {}
+    sender = (prof.get("sender_name") or "").strip()
+    comp = (prof.get("company_name") or "").strip()
+    sign = f"{sender}\n{comp}".strip() if (sender or comp) else "me"
+
     prompt = (
         "Write a cold outreach email to the prospect, matching the TONE and STRUCTURE "
         "of OUR winning sample emails in the knowledge base (short, 3 short paragraphs, "
         "one named proof point, one low-friction question, no attachments). "
         "Use the hook and pains provided. Cite the proof case study naturally. "
+        f"Sign off exactly as:\nBest,\n{sign}\n"
+        "Do NOT use placeholders like [Your Name]. "
         "Return JSON: {\"subject\": str, \"body\": str}.\n\n"
         f"Prospect: {prospect['name']}\nHook: {hook}\n"
         f"Pains: {json.dumps(pains.get('pains', []))}\n"

@@ -12,6 +12,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# allow the http://localhost redirect + minor scope variance from Google
+os.environ.setdefault("OAUTHLIB_INSECURE_TRANSPORT", "1")
+os.environ.setdefault("OAUTHLIB_RELAX_TOKEN_SCOPE", "1")
+
 CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
 CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/google/callback")
@@ -37,11 +41,15 @@ def _client_config():
     }}
 
 
+_PENDING: dict = {}  # holds the PKCE code_verifier between auth_url and the callback
+
+
 def auth_url() -> str:
     from google_auth_oauthlib.flow import Flow
     flow = Flow.from_client_config(_client_config(), scopes=SCOPES, redirect_uri=REDIRECT_URI)
     url, _ = flow.authorization_url(access_type="offline", prompt="consent",
                                     include_granted_scopes="true")
+    _PENDING["verifier"] = getattr(flow, "code_verifier", None)
     return url
 
 
@@ -49,6 +57,8 @@ def exchange_code(code: str) -> str:
     """Exchange the auth code for tokens, persist them, return the connected email."""
     from google_auth_oauthlib.flow import Flow
     flow = Flow.from_client_config(_client_config(), scopes=SCOPES, redirect_uri=REDIRECT_URI)
+    if _PENDING.get("verifier"):
+        flow.code_verifier = _PENDING["verifier"]
     flow.fetch_token(code=code)
     creds = flow.credentials
     TOKEN_FILE.write_text(creds.to_json())

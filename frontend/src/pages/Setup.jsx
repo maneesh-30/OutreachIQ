@@ -20,6 +20,7 @@ export default function Setup() {
   const [error, setError] = useState('')
   const [docs, setDocs] = useState([])
   const [uploading, setUploading] = useState(false)
+  const [senderName, setSenderName] = useState('')
   const [gmail, setGmail] = useState({ connected: false, configured: false })
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -42,7 +43,7 @@ export default function Setup() {
   // show the active company's brief (persists across navigation); leave the bar empty
   useEffect(() => {
     getCompany().then((c) => {
-      if (c && c.company_name) { setProfile(c); setIcp(c.icp || {}); setDocs(c.docs || []) }
+      if (c && c.company_name) { setProfile(c); setIcp(c.icp || {}); setDocs(c.docs || []); setSenderName(c.sender_name || '') }
     }).catch(() => {})
   }, [])
 
@@ -209,6 +210,14 @@ export default function Setup() {
           {/* sending */}
           <section className="mt-10">
             <div className="text-[11px] font-medium uppercase tracking-wider text-muted">Sending</div>
+            <div className="mt-3 flex items-center gap-4">
+              <div className="w-40 shrink-0 text-sm text-muted">Your name</div>
+              <input value={senderName} onChange={(e) => setSenderName(e.target.value)}
+                onBlur={() => saveCompany({ sender_name: senderName }).catch(() => {})}
+                placeholder="e.g. Jamie Lee"
+                className="flex-1 rounded-lg border border-white/10 bg-[#0d1014] px-3 py-2 text-sm text-gray-200 outline-none focus:border-white/30" />
+            </div>
+            <p className="mt-2 text-xs text-muted">Signed on every email as {senderName || 'your name'}{profile.company_name ? ` · ${profile.company_name}` : ''}.</p>
             <div className="mt-3 flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-3">
               <div className="flex items-center gap-3">
                 <Mail size={18} className="text-muted" />

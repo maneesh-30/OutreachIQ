@@ -290,7 +290,8 @@ def google_callback(code: str = "", error: str = ""):
         return RedirectResponse(f"{FRONTEND_URL}/setup?gmail=error")
     try:
         gmailapi.exchange_code(code)
-    except Exception:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001
+        print(f"[gmail] token exchange failed: {e}")
         return RedirectResponse(f"{FRONTEND_URL}/setup?gmail=error")
     return RedirectResponse(f"{FRONTEND_URL}/setup?gmail=connected")
 
