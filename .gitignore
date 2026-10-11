@@ -31,3 +31,5 @@ Thumbs.db
 backend/.kb_state.json
 
 backend/company_profile.json
+
+backend/gmail_token.json

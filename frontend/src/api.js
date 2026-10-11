@@ -32,6 +32,19 @@ export const uploadDocs = (fileList) => {
   })
 }
 
+export const getGmailStatus = () => fetch('/api/gmail/status').then(J)
+export const connectGmail = () => fetch('/api/auth/google').then(J) // -> { url }
+export const disconnectGmail = () => fetch('/api/gmail/disconnect', { method: 'POST' }).then(J)
+export const sendEmail = (emailId, recipient) =>
+  fetch(`/api/emails/${emailId}/send`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ recipient }),
+  }).then(async (r) => {
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || `HTTP ${r.status}`)
+    return r.json()
+  })
+
 export const getCompany = () => fetch('/api/company').then(J)
 export const saveCompany = (profile) =>
   fetch('/api/company', {

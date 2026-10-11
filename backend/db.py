@@ -69,6 +69,9 @@ class Email(Base):
     subject: Mapped[str] = mapped_column(Text, default="")
     body: Mapped[str] = mapped_column(Text, default="")
     sources_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    recipient: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    sent: Mapped[bool] = mapped_column(default=False)
+    sent_at: Mapped[dt.datetime | None] = mapped_column(DateTime, nullable=True)
 
     prospect: Mapped["Prospect"] = relationship(back_populates="email")
 

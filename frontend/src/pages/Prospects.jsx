@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Copy, RefreshCw, Lightbulb, Mail, FileText, Download, ExternalLink, Loader2 } from 'lucide-react'
+import { Copy, Lightbulb, Mail, FileText, Download, ExternalLink, Loader2, Send, Check } from 'lucide-react'
 import { Card, Button, RegionChip } from '../ui'
-import { getRun, listRuns } from '../api'
+import { getRun, listRuns, sendEmail } from '../api'
 import { useApp } from '../state'
 
 const scoreColor = (v) => (v >= 85 ? 'text-success' : v >= 65 ? 'text-warn' : 'text-muted')
@@ -124,30 +124,60 @@ export default function Prospects() {
             </Card>
           )}
 
-          {email && (
-            <Card className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm font-medium"><Mail size={16} className="text-accent" /> Email <span className="text-xs font-normal text-muted">Draft · Not sent</span></div>
-                <div className="flex gap-2">
-                  <Button variant="ghost" onClick={() => navigator.clipboard.writeText(`${email.subject}\n\n${email.body}`)}><Copy size={15} /> Copy</Button>
-                  <Button variant="ghost" title="Coming in Phase 6"><RefreshCw size={15} /> Regenerate</Button>
-                </div>
-              </div>
-              <div className="mt-4 font-semibold">Subject: {email.subject}</div>
-              <div className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-gray-200">{email.body}</div>
-              {email.sources?.length > 0 && (
-                <div className="mt-5 flex items-center gap-2 border-t border-border pt-4 text-xs text-muted">
-                  <FileText size={14} /> Citations
-                  {email.sources.map((s) => (
-                    <span key={s} className="rounded-md border border-border bg-surface2 px-2 py-1 text-gray-300">{s}</span>
-                  ))}
-                </div>
-              )}
-            </Card>
-          )}
+          {email && <EmailBlock key={email.id} email={email} prospect={p} />}
         </div>
       </div>
     </div>
+  )
+}
+
+function EmailBlock({ email, prospect }) {
+  const guess = prospect.domain ? `contact@${prospect.domain}` : ''
+  const [recipient, setRecipient] = useState(email.recipient || guess)
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(!!email.sent)
+  const [err, setErr] = useState('')
+
+  const send = async () => {
+    if (!recipient.trim()) { setErr('Enter a recipient email'); return }
+    setSending(true); setErr('')
+    try { await sendEmail(email.id, recipient.trim()); setSent(true) }
+    catch (e) { setErr(String(e.message || e)) }
+    finally { setSending(false) }
+  }
+
+  return (
+    <Card className="p-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Mail size={16} className="text-accent" /> Email
+          <span className={`text-xs font-normal ${sent ? 'text-success' : 'text-muted'}`}>{sent ? '· Sent' : '· Draft'}</span>
+        </div>
+        <Button variant="ghost" onClick={() => navigator.clipboard.writeText(`${email.subject}\n\n${email.body}`)}><Copy size={15} /> Copy</Button>
+      </div>
+      <div className="mt-4 font-semibold">Subject: {email.subject}</div>
+      <div className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-gray-200">{email.body}</div>
+
+      {email.sources?.length > 0 && (
+        <div className="mt-5 flex flex-wrap items-center gap-2 text-xs text-muted">
+          <FileText size={14} /> Citations
+          {email.sources.map((s) => (
+            <span key={s} className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-gray-300">{s}</span>
+          ))}
+        </div>
+      )}
+
+      {/* send row */}
+      <div className="mt-5 flex items-center gap-2 border-t border-white/10 pt-4">
+        <input value={recipient} onChange={(e) => setRecipient(e.target.value)}
+          placeholder="recipient@company.com" disabled={sent}
+          className="flex-1 rounded-lg border border-white/10 bg-[#0d1014] px-3 py-2 text-sm outline-none focus:border-white/30 disabled:opacity-60" />
+        {sent
+          ? <span className="flex items-center gap-1.5 text-sm text-success"><Check size={15} /> Sent to {recipient}</span>
+          : <Button onClick={send} disabled={sending}><Send size={15} /> {sending ? 'Sending…' : 'Send'}</Button>}
+      </div>
+      {err && <div className="mt-2 text-xs text-danger">{err}</div>}
+    </Card>
   )
 }
 

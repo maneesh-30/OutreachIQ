@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Globe, Check, Database, ArrowRight, FileText, Upload } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { Globe, Check, Database, ArrowRight, FileText, Upload, Mail } from 'lucide-react'
 import { Button } from '../ui'
-import { analyzeSite, getCompany, saveCompany, uploadDocs } from '../api'
+import { analyzeSite, getCompany, saveCompany, uploadDocs, getGmailStatus, connectGmail, disconnectGmail } from '../api'
 import { useApp } from '../state'
 
 const ICP_FIELDS = [
@@ -20,6 +20,24 @@ export default function Setup() {
   const [error, setError] = useState('')
   const [docs, setDocs] = useState([])
   const [uploading, setUploading] = useState(false)
+  const [gmail, setGmail] = useState({ connected: false, configured: false })
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const refreshGmail = () => getGmailStatus().then(setGmail).catch(() => {})
+  useEffect(() => { refreshGmail() }, [])
+  useEffect(() => {
+    if (searchParams.get('gmail')) {
+      refreshGmail()
+      searchParams.delete('gmail'); setSearchParams(searchParams, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const connectG = async () => {
+    try { const { url } = await connectGmail(); window.location.href = url }
+    catch (e) { alert('Gmail connect unavailable: ' + e.message) }
+  }
+  const disconnectG = async () => { await disconnectGmail(); refreshGmail() }
 
   // show the active company's brief (persists across navigation); leave the bar empty
   useEffect(() => {
@@ -185,6 +203,27 @@ export default function Setup() {
                   </span>
                 ))}
               </div>
+            )}
+          </section>
+
+          {/* sending */}
+          <section className="mt-10">
+            <div className="text-[11px] font-medium uppercase tracking-wider text-muted">Sending</div>
+            <div className="mt-3 flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-3">
+              <div className="flex items-center gap-3">
+                <Mail size={18} className="text-muted" />
+                <div>
+                  {gmail.connected
+                    ? <><div className="text-sm font-medium">Gmail connected</div><div className="text-xs text-muted">Emails send from {gmail.email || 'your account'}</div></>
+                    : <><div className="text-sm font-medium">Connect Gmail to send</div><div className="text-xs text-muted">Emails send from your own Google account. Drafts until you send.</div></>}
+                </div>
+              </div>
+              {gmail.connected
+                ? <Button variant="ghost" onClick={disconnectG}>Disconnect</Button>
+                : <Button onClick={connectG} disabled={!gmail.configured} title={gmail.configured ? '' : 'Set GOOGLE_CLIENT_ID/SECRET'}>Connect Gmail</Button>}
+            </div>
+            {!gmail.configured && !gmail.connected && (
+              <div className="mt-2 text-xs text-muted">Gmail OAuth not configured yet (needs GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET).</div>
             )}
           </section>
 

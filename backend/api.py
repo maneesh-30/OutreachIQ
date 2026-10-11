@@ -13,9 +13,11 @@ import json
 import queue
 import threading
 
+import datetime as dt
+
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, RedirectResponse
 
 import db
 from db import Session, Run, Prospect, Email, Step
@@ -26,6 +28,9 @@ from analyzer import analyze
 from kb_build import build_from_profile, _load_state
 from config import foundry_client
 import company as companydb
+import gmail as gmailapi
+
+FRONTEND_URL = "http://localhost:5173"
 
 app = FastAPI(title="OutreachIQ API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
@@ -169,8 +174,10 @@ def get_run(run_id: int):
                 "facts": json.loads(p.facts_json) if p.facts_json else None,
                 "pains": json.loads(p.pains_json) if p.pains_json else None,
                 "hook": p.hook,
-                "email": ({"subject": em.subject, "body": em.body,
-                           "sources": json.loads(em.sources_json) if em.sources_json else []}
+                "email": ({"id": em.id, "subject": em.subject, "body": em.body,
+                           "sources": json.loads(em.sources_json) if em.sources_json else [],
+                           "recipient": em.recipient, "sent": em.sent,
+                           "sent_at": em.sent_at.isoformat() if em.sent_at else None}
                           if em else None),
             })
         return {
@@ -259,3 +266,54 @@ async def upload_docs(files: list[UploadFile] = File(...)):
     prof["docs"] = (prof.get("docs") or []) + added
     companydb.save_company(prof)
     return {"docs": prof["docs"], "added": added}
+
+
+# ---------- Gmail connect + send ----------
+
+@app.get("/api/gmail/status")
+def gmail_status():
+    return gmailapi.status()
+
+
+@app.get("/api/auth/google")
+def google_auth():
+    if not gmailapi.configured():
+        raise HTTPException(400, "Gmail OAuth not configured (set GOOGLE_CLIENT_ID/SECRET)")
+    return {"url": gmailapi.auth_url()}
+
+
+@app.get("/api/auth/google/callback")
+def google_callback(code: str = "", error: str = ""):
+    if error or not code:
+        return RedirectResponse(f"{FRONTEND_URL}/setup?gmail=error")
+    try:
+        gmailapi.exchange_code(code)
+    except Exception:  # noqa: BLE001
+        return RedirectResponse(f"{FRONTEND_URL}/setup?gmail=error")
+    return RedirectResponse(f"{FRONTEND_URL}/setup?gmail=connected")
+
+
+@app.post("/api/gmail/disconnect")
+def gmail_disconnect():
+    gmailapi.disconnect()
+    return {"connected": False}
+
+
+@app.post("/api/emails/{email_id}/send")
+def send_email(email_id: int, payload: dict):
+    to = (payload or {}).get("recipient", "").strip()
+    if not to:
+        raise HTTPException(400, "recipient required")
+    with Session() as s:
+        em = s.get(Email, email_id)
+        if not em:
+            raise HTTPException(404, "email not found")
+        try:
+            gmailapi.send(to, em.subject, em.body)
+        except Exception as e:  # noqa: BLE001
+            raise HTTPException(502, f"send failed: {e}")
+        em.recipient = to
+        em.sent = True
+        em.sent_at = dt.datetime.now(dt.timezone.utc)
+        s.commit()
+        return {"sent": True, "recipient": to}
