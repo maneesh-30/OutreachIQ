@@ -223,7 +223,7 @@ def analyze_site(payload: dict):
     try:
         profile = analyze(url, Ledger())
     except Exception as e:  # noqa: BLE001
-        raise HTTPException(502, f"could not analyze site: {e}")
+        raise HTTPException(502, str(e) or "could not analyze this site")
     try:
         build_from_profile(profile)           # rebuild KB from the scraped profile
     except Exception as e:  # noqa: BLE001

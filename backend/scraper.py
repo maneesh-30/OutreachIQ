@@ -7,6 +7,7 @@ Returns homepage + a couple of key pages, concatenated and capped.
 from __future__ import annotations
 
 import os
+import time
 from urllib.parse import urlparse
 
 import requests
@@ -41,12 +42,28 @@ def fetch_site(url: str) -> dict:
         "readableTextCharThreshold": 50,
         "proxyConfiguration": {"useApifyProxy": True},
     }
-    try:
-        r = requests.post(f"{ENDPOINT}?token={APIFY_TOKEN}", json=body, timeout=180)
-        r.raise_for_status()
-        items = r.json()
-    except Exception as e:  # noqa: BLE001
-        raise RuntimeError(f"could not fetch {base}: {e}")
+    items = None
+    last_kind = ""
+    for attempt in range(2):
+        try:
+            r = requests.post(f"{ENDPOINT}?token={APIFY_TOKEN}", json=body, timeout=180)
+            r.raise_for_status()
+            items = r.json()
+            break
+        except requests.exceptions.ConnectionError:
+            last_kind = "network"
+        except requests.exceptions.Timeout:
+            last_kind = "timeout"
+        except Exception:  # noqa: BLE001
+            last_kind = "crawler"
+        if attempt == 0:
+            time.sleep(1.5)
+    if items is None:
+        if last_kind == "network":
+            raise RuntimeError("couldn't reach the web crawler — check your internet connection and try again")
+        if last_kind == "timeout":
+            raise RuntimeError("the site took too long to read — try again")
+        raise RuntimeError("couldn't read this site right now — try again")
 
     host = urlparse(base).netloc
     texts, title, pages = [], host, 0
