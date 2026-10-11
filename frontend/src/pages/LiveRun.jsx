@@ -51,7 +51,7 @@ export default function LiveRun() {
   const [steps, setSteps] = useState({})         // {name: {agent: {status, out}}}
   const [cost, setCost] = useState({ azure: 0, groq: 0, total: 0 })
   const [activity, setActivity] = useState([])
-  const [status, setStatus] = useState('running')
+  const [status, setStatus] = useState('loading')
   const [source, setSource] = useState('')
   const [elapsed, setElapsed] = useState(0)
   const startRef = useRef(Date.now())
@@ -69,7 +69,7 @@ export default function LiveRun() {
       run.prospects.forEach((p) => { st[p.name] = deriveStatuses(p) })
       setSteps(st)
       if (run.status === 'running') es = openStream()
-    }).catch(() => {})
+    }).catch(() => setStatus('notfound'))
 
     function openStream() {
       return streamRun(id, (ev) => {
@@ -115,12 +115,12 @@ export default function LiveRun() {
     return () => clearInterval(t)
   }, [status])
 
-  if (!id) {
+  if (!id || status === 'notfound') {
     return (
-      <div className="grid h-full place-items-center text-center">
+      <div className="grid min-h-[300px] place-items-center text-center">
         <div>
           <p className="text-muted">No active run.</p>
-          <Link to="/new" className="mt-3 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white">Start a run</Link>
+          <Link to="/new" className="mt-3 inline-block rounded-lg bg-white px-4 py-2 text-sm font-medium text-black">Start a run</Link>
         </div>
       </div>
     )
