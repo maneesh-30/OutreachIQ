@@ -13,14 +13,21 @@ export default function Prospects() {
   const [id, setId] = useState(runId ? Number(runId) : lastRunId)
   const [run, setRun] = useState(null)
   const [sel, setSel] = useState(0)
+  const [notFound, setNotFound] = useState(false)
 
   useEffect(() => {
-    if (id == null) { listRuns().then((r) => r[0] && setId(r[0].id)).catch(() => {}); return }
-    getRun(id).then(setRun).catch(() => {})
+    if (id == null) {
+      listRuns().then((r) => (r[0] ? setId(r[0].id) : setNotFound(true))).catch(() => setNotFound(true))
+      return
+    }
+    getRun(id).then((d) => { setRun(d); setNotFound(false) }).catch(() => {
+      // stale id (e.g. deleted run): fall back to the latest run, else empty
+      listRuns().then((r) => (r[0] ? setId(r[0].id) : setNotFound(true))).catch(() => setNotFound(true))
+    })
   }, [id])
 
-  if (id == null) return <Empty />
-  if (!run) return <div className="grid h-full place-items-center text-muted"><Loader2 className="animate-spin" /></div>
+  if (notFound || id == null) return <Empty />
+  if (!run) return <div className="grid min-h-[300px] place-items-center text-muted"><Loader2 className="animate-spin" /></div>
   if (run.prospects.length === 0) return <Empty />
 
   const p = run.prospects[Math.min(sel, run.prospects.length - 1)]
