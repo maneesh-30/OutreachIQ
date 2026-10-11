@@ -191,6 +191,18 @@ body {
 .rocket .cloud5 { width: 170px; height: 50px; top: 80%; left: 1500px; animation-duration: 2s; }
 @keyframes moveClouds { 0% { transform: translateX(0); } 100% { transform: translateX(-2000px); } }
 
+/* ---------- vertical pipeline flow dot ---------- */
+@keyframes flow-down {
+  0%   { top: 0;    opacity: 0; }
+  12%  { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+.flow-dot {
+  animation: flow-down 2.6s cubic-bezier(.45,0,.55,1) infinite;
+  box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.6);
+}
+
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: #2a3038; border-radius: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
