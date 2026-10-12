@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Copy, Lightbulb, Mail, FileText, Download, ExternalLink, Loader2, Send, Check } from 'lucide-react'
+import { Copy, Lightbulb, Mail, FileText, ExternalLink, Loader2, Send, Check } from 'lucide-react'
 import { Card, Button, RegionChip } from '../ui'
 import { getRun, listRuns, sendEmail } from '../api'
 import { useApp } from '../state'
@@ -37,12 +37,9 @@ export default function Prospects() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Prospects</h1>
-          <p className="mt-1 text-muted">Explore the research. Review the fit. Make every first touch count.</p>
-        </div>
-        <Button variant="ghost"><Download size={16} /> Export CSV</Button>
+      <div>
+        <h1 className="text-2xl font-semibold">Prospects</h1>
+        <p className="mt-1 text-muted">Explore the research. Review the fit. Make every first touch count.</p>
       </div>
 
       <div className="mt-6 grid grid-cols-[300px_minmax(0,1fr)] gap-6">

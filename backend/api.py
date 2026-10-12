@@ -11,7 +11,16 @@ from __future__ import annotations
 import asyncio
 import json
 import queue
+import sys
 import threading
+
+# Windows stdout defaults to cp1252; agent output can contain chars like U+2011
+# (non-breaking hyphen) that crash a worker's print(). Force UTF-8, never raise.
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 import datetime as dt
 

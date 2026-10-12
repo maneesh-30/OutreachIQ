@@ -74,8 +74,15 @@ def run_batch(top_n: int = 3, emit=_noop, source: str = "pool", scope: str = "bo
     results = []
     for r in ranked:
         _tp = time.time()
-        res = run_pipeline(r["prospect"], ledger, emit=emit)
-        print(f"[run] prospect {r['prospect']['name']}={time.time()-_tp:.1f}s")
+        name = r["prospect"]["name"]
+        try:
+            res = run_pipeline(r["prospect"], ledger, emit=emit)
+        except Exception as e:
+            # one bad prospect must not kill the whole run
+            print(f"[run] prospect {name} FAILED: {e}")
+            emit({"type": "prospect_error", "prospect": name, "error": str(e)})
+            continue
+        print(f"[run] prospect {name}={time.time()-_tp:.1f}s")
         res["discovery_score"] = r["score"]
         results.append(res)
 

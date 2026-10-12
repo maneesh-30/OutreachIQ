@@ -187,7 +187,18 @@ export default function LiveRun() {
               </div>
             )
           })}
-          {prospects.length === 0 && <div className="py-12 text-center text-sm text-muted">Finding companies on the web…</div>}
+          {prospects.length === 0 && (
+            <div className="flex flex-col items-center justify-center gap-6 py-16">
+              <div className="relative h-24 w-24">
+                <div className="banter-loader">
+                  <div className="banter-loader__box" /><div className="banter-loader__box" /><div className="banter-loader__box" />
+                  <div className="banter-loader__box" /><div className="banter-loader__box" /><div className="banter-loader__box" />
+                  <div className="banter-loader__box" /><div className="banter-loader__box" /><div className="banter-loader__box" />
+                </div>
+              </div>
+              <div className="text-sm text-muted">Finding companies on the web…</div>
+            </div>
+          )}
         </div>
 
         {status !== 'running' && prospects.length > 0 && (
